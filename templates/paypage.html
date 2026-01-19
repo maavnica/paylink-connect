@@ -1,0 +1,27 @@
+<!doctype html><html lang="es"><head><meta charset="utf-8"/><meta name="viewport" content="width=device-width,initial-scale=1"/>
+<title>PayLink — {{ merchant.business_name }}</title></head><body>
+<h2>{{ merchant.business_name }}</h2>
+{% if success == '1' %}<p>✅ Pago realizado.</p>{% elif success == '0' %}<p>❌ Pago cancelado.</p>{% endif %}
+<p>Elige monto:</p>
+<div id="btns">
+<button onclick="pay({{ merchant.amount1 }});return false;">Pagar {{ merchant.amount1 }} {{ merchant.currency }}</button><br>
+<button onclick="pay({{ merchant.amount2 }});return false;">Pagar {{ merchant.amount2 }} {{ merchant.currency }}</button><br>
+<button onclick="pay({{ merchant.amount3 }});return false;">Pagar {{ merchant.amount3 }} {{ merchant.currency }}</button><br>
+</div>
+<p><a href="{{ whatsapp_url }}">💬 WhatsApp</a></p>
+</div>
+<p><a href="{{ whatsapp_url }}" target="_blank">💬 WhatsApp</a></p>
+<script>
+async function pay(amount){
+  const fd = new FormData();
+  fd.append('slug','{{ merchant.slug }}');
+  fd.append('amount', String(amount));
+  const res = await fetch('/api/create-checkout-session',{method:'POST',body:fd});
+  const data = await res.json();
+  if(data.url) window.location = data.url;
+  else alert('Error');
+}
+</script>
+<p><small>Paiement sécurisé con Stripe. Los fees del pago los paga el cliente.</small></p>
+<p><a href="/">Maavnica PayLink</a></p>
+</body></html>

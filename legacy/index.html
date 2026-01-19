@@ -1,0 +1,252 @@
+<!doctype html>
+<html lang="es">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Maavnica PayLink — Un link. Un pago. Sin complicaciones.</title>
+
+  <meta name="description" content="Cobra por WhatsApp cuando el cliente no tiene efectivo. Activa tu PayLink (precio de lanzamiento 9 USD, pago único) y recibe pagos directamente en tu cuenta." />
+  <meta name="theme-color" content="#0f172a" />
+
+  <!-- Open Graph -->
+  <meta property="og:title" content="Maavnica PayLink" />
+  <meta property="og:description" content="Un link de pago simple, seguro y reutilizable para cobrar por WhatsApp." />
+  <meta property="og:type" content="website" />
+
+  <style>
+    :root{
+      --bg:#0b1220;
+      --card:rgba(255,255,255,.08);
+      --card2:rgba(255,255,255,.06);
+      --text:rgba(255,255,255,.92);
+      --muted:rgba(255,255,255,.72);
+      --line:rgba(255,255,255,.12);
+      --accent:#22c55e;
+      --accent2:#16a34a;
+      --shadow:0 18px 55px rgba(0,0,0,.45);
+      --radius:20px;
+      --max:1040px;
+    }
+    *{box-sizing:border-box}
+    body{
+      margin:0;
+      font-family: system-ui,-apple-system,Segoe UI,Roboto,Helvetica,Arial;
+      background:
+        radial-gradient(900px 600px at 15% 15%, rgba(34,197,94,.22), transparent 60%),
+        radial-gradient(900px 600px at 85% 10%, rgba(59,130,246,.18), transparent 60%),
+        var(--bg);
+      color:var(--text);
+      line-height:1.45;
+    }
+    a{color:inherit}
+    .wrap{max-width:var(--max);margin:0 auto;padding:22px 18px 60px}
+
+    header{
+      display:flex;
+      justify-content:space-between;
+      align-items:center;
+      gap:12px;
+      padding-bottom:18px;
+    }
+    .brand{
+      display:flex;
+      gap:10px;
+      align-items:center;
+      text-decoration:none;
+    }
+    .logo{
+      width:38px;height:38px;border-radius:12px;
+      background:linear-gradient(135deg,rgba(34,197,94,.95),rgba(59,130,246,.75));
+    }
+    .brandname{
+      font-weight:900;
+      letter-spacing:.22em;
+      text-transform:uppercase;
+      font-size:.9rem;
+    }
+    .brandname small{
+      display:block;
+      letter-spacing:normal;
+      text-transform:none;
+      font-weight:600;
+      color:var(--muted);
+      font-size:.8rem;
+    }
+
+    .panel{
+      background:linear-gradient(180deg,var(--card),var(--card2));
+      border:1px solid var(--line);
+      border-radius:var(--radius);
+      box-shadow:var(--shadow);
+      padding:24px;
+    }
+
+    h1{
+      margin:0 0 10px;
+      font-size:clamp(1.6rem,2.8vw,2.4rem);
+      line-height:1.15;
+    }
+    .lead{
+      margin:0 0 16px;
+      color:var(--muted);
+      font-size:1.05rem;
+    }
+
+    .bullets{
+      display:flex;
+      flex-wrap:wrap;
+      gap:10px;
+      margin:14px 0 18px;
+    }
+    .chip{
+      border:1px solid var(--line);
+      background:rgba(255,255,255,.03);
+      border-radius:999px;
+      padding:8px 12px;
+      font-size:.9rem;
+      color:var(--muted);
+    }
+
+    .cta{
+      display:inline-flex;
+      justify-content:center;
+      align-items:center;
+      gap:8px;
+      padding:14px 18px;
+      border-radius:14px;
+      background:linear-gradient(135deg,var(--accent),var(--accent2));
+      color:#06110a;
+      font-weight:900;
+      text-decoration:none;
+      box-shadow:0 18px 45px rgba(34,197,94,.25);
+      margin-top:10px;
+    }
+
+    .price{
+      margin-top:16px;
+      font-size:1.8rem;
+      font-weight:900;
+    }
+    .price span{
+      font-size:.95rem;
+      color:var(--muted);
+      font-weight:700;
+    }
+
+    .section{
+      margin-top:26px;
+    }
+    .section h2{
+      margin:0 0 12px;
+      font-size:1.25rem;
+    }
+
+    .steps{
+      display:grid;
+      gap:12px;
+    }
+    .step{
+      border:1px solid var(--line);
+      border-radius:14px;
+      padding:14px;
+      background:rgba(255,255,255,.03);
+    }
+
+    footer{
+      margin-top:40px;
+      padding-top:18px;
+      border-top:1px solid var(--line);
+      display:flex;
+      flex-wrap:wrap;
+      justify-content:space-between;
+      gap:12px;
+      color:var(--muted);
+      font-size:.9rem;
+    }
+    footer a{
+      color:var(--muted);
+      text-decoration:none;
+      border-bottom:1px dashed rgba(255,255,255,.25);
+    }
+    footer a:hover{color:var(--text)}
+
+    @media(max-width:900px){
+      .wrap{padding:18px 14px 50px}
+    }
+  </style>
+</head>
+
+<body>
+  <div class="wrap">
+
+    <header>
+      <a class="brand" href="/paylink/">
+        <div class="logo"></div>
+        <div class="brandname">
+          MAAVNICA
+          <small>PayLink</small>
+        </div>
+      </a>
+    </header>
+
+    <main class="panel">
+
+      <h1>Cobra por WhatsApp cuando el cliente no tiene efectivo</h1>
+      <p class="lead">
+        PayLink es un <b>link de pago simple, seguro y reutilizable</b> para profesionales que trabajan por WhatsApp.
+      </p>
+
+      <div class="bullets">
+        <div class="chip">💳 Tarjeta bancaria</div>
+        <div class="chip">📲 Apple Pay / Google Pay</div>
+        <div class="chip">🌍 Tarjetas locales e internacionales</div>
+        <div class="chip">🔐 Pago seguro (Stripe)</div>
+      </div>
+
+      <!-- À REMPLACER PAR TON LIEN STRIPE -->
+      <a class="cta" href="https://buy.stripe.com/3cIeV64O46CTcTs2dL4Rq03" target="_blank" rel="noopener">
+        Activar PayLink · oferta de lanzamiento
+      </a>
+
+      <div class="price">
+        9 USD <span>· precio de lanzamiento · pago único</span>
+      </div>
+
+      <div class="section">
+        <h2>¿Cómo funciona?</h2>
+        <div class="steps">
+          <div class="step">1️⃣ Activas PayLink con un pago único.</div>
+          <div class="step">2️⃣ Envías tu link por WhatsApp, SMS o email.</div>
+          <div class="step">3️⃣ Te creamos hasta 3 enlaces de pago reutilizables.</div>
+        </div>
+      </div>
+
+      <div class="section">
+        <h2>Información importante</h2>
+        <p class="lead">
+          Pagos procesados por Stripe. Las comisiones de procesamiento se aplican automáticamente según las condiciones de Stripe.<br/>Cada activación PayLink incluye la creación de hasta 3 enlaces de pago.
+        </p>
+      </div>
+
+    </main>
+
+    <footer>
+      <div>
+        <b>Maavnica</b><br/>
+        Soluciones digitales simples para profesionales.
+      </div>
+      <div>
+        <a href="/mentions-legales/">Mentions legales</a> ·
+        <a href="/cgv-paylink/">Condiciones generales</a> ·
+        <a href="/contact/">Contacto</a>
+      </div>
+    </footer>
+
+  </div>
+
+  <!--
+    TODO AVANT MISE EN LIGNE :
+    - Remplacer STRIPE_PAYMENT_LINK par https://buy.stripe.com/XXXX
+  -->
+</body>
+</html>

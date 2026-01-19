@@ -1,0 +1,263 @@
+<!doctype html>
+<html lang="es">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Pago cancelado — PayLink</title>
+  <meta name="description" content="Pago cancelado. Puedes intentarlo de nuevo o contactar a Maavnica." />
+  <meta name="theme-color" content="#0f172a" />
+  <style>
+    :root{
+      --bg:#0b1220; --card:rgba(255,255,255,.08); --card2:rgba(255,255,255,.06);
+      --text:rgba(255,255,255,.92); --muted:rgba(255,255,255,.72); --line:rgba(255,255,255,.12);
+      --accent:#22c55e; --accent2:#16a34a; --shadow:0 18px 55px rgba(0,0,0,.45);
+      --radius:20px; --max:1040px;
+    }
+    *{box-sizing:border-box}
+    body{
+      margin:0;
+      font-family:system-ui,-apple-system,Segoe UI,Roboto,Helvetica,Arial;
+      background:
+        radial-gradient(900px 600px at 15% 15%, rgba(34,197,94,.18), transparent 60%),
+        radial-gradient(900px 600px at 85% 10%, rgba(59,130,246,.16), transparent 60%),
+        var(--bg);
+      color:var(--text);
+      line-height:1.45;
+    }
+    a{color:inherit}
+    .wrap{max-width:var(--max);margin:0 auto;padding:22px 18px 60px}
+    header{display:flex;justify-content:space-between;align-items:center;gap:12px;padding-bottom:18px}
+    .brand{display:flex;gap:10px;align-items:center;text-decoration:none}
+    .logo{width:38px;height:38px;border-radius:12px;background:linear-gradient(135deg,rgba(34,197,94,.95),rgba(59,130,246,.75))}
+    .brandname{font-weight:900;letter-spacing:.22em;text-transform:uppercase;font-size:.9rem}
+    .brandname small{display:block;letter-spacing:normal;text-transform:none;font-weight:600;color:var(--muted);font-size:.82rem}
+
+    .lang{display:flex;gap:8px}
+    .lang button{
+      cursor:pointer;
+      padding:7px 10px;
+      border:1px solid var(--line);
+      border-radius:999px;
+      background:rgba(255,255,255,.03);
+      color:var(--muted);
+      font-weight:900;
+    }
+    .lang button.active{color:var(--text);border-color:rgba(34,197,94,.45);background:rgba(34,197,94,.10)}
+
+    .panel{
+      background:linear-gradient(180deg,var(--card),var(--card2));
+      border:1px solid var(--line);
+      border-radius:var(--radius);
+      box-shadow:var(--shadow);
+      padding:24px;
+    }
+    h1{margin:0 0 10px;font-size:clamp(1.55rem,2.6vw,2.2rem);line-height:1.15}
+    .lead{margin:0 0 14px;color:var(--muted);font-size:1.05rem}
+
+    .warn{
+      border:1px solid rgba(245,158,11,.35);
+      background:rgba(245,158,11,.10);
+      padding:12px 14px;
+      border-radius:14px;
+      color:var(--muted);
+      margin:12px 0 16px;
+    }
+
+    .steps{display:grid;gap:12px;margin-top:12px}
+    .step{
+      border:1px solid var(--line);
+      border-radius:14px;
+      padding:14px;
+      background:rgba(255,255,255,.03);
+      color:var(--muted);
+    }
+    .step b{color:var(--text)}
+
+    .ctaRow{display:flex;flex-wrap:wrap;gap:10px;margin-top:16px}
+    .cta{
+      display:inline-flex;justify-content:center;align-items:center;gap:8px;
+      padding:12px 14px;border-radius:14px;
+      background:linear-gradient(135deg,var(--accent),var(--accent2));
+      color:#06110a;font-weight:900;text-decoration:none;
+      box-shadow:0 18px 45px rgba(34,197,94,.25);
+    }
+    .ghost{
+      display:inline-flex;justify-content:center;align-items:center;gap:8px;
+      padding:12px 14px;border-radius:14px;text-decoration:none;
+      border:1px solid rgba(255,255,255,.18);
+      background:rgba(255,255,255,.03);
+      color:var(--text);font-weight:900;
+    }
+
+    footer{
+      margin-top:40px;padding-top:18px;border-top:1px solid var(--line);
+      display:flex;flex-wrap:wrap;justify-content:space-between;gap:12px;
+      color:var(--muted);font-size:.9rem;
+    }
+    footer a{color:var(--muted);text-decoration:none;border-bottom:1px dashed rgba(255,255,255,.25)}
+    footer a:hover{color:var(--text)}
+  </style>
+</head>
+
+<body>
+  <div class="wrap">
+    <header>
+      <a class="brand" href="/">
+        <div class="logo"></div>
+        <div class="brandname">MAAVNICA<small id="subBrand">PayLink</small></div>
+      </a>
+
+      <div class="lang" aria-label="Language">
+        <button id="btn-es" type="button">ES</button>
+        <button id="btn-fr" type="button">FR</button>
+        <button id="btn-en" type="button">EN</button>
+      </div>
+    </header>
+
+    <main class="panel">
+      <h1 id="title">⚠️ Pago cancelado</h1>
+      <p id="intro" class="lead">No se realizó el pago. No se ha cobrado nada.</p>
+
+      <div class="warn" id="warnBox"></div>
+
+      <h2 id="stepsTitle">¿Qué puedes hacer ahora?</h2>
+      <div class="steps" id="steps"></div>
+
+      <div class="ctaRow">
+        <a id="retryBtn" class="cta" href="/order/?lang=es">🔁 Intentar de nuevo</a>
+        <a id="mailBtn" class="ghost" href="#">📧 Contacto</a>
+        <a id="homeBtn" class="ghost" href="/">← Volver</a>
+      </div>
+    </main>
+
+    <footer>
+      <div><b>Maavnica</b> — Soluciones digitales simples para profesionales.</div>
+      <div>
+        <a href="/mentions-legales/" id="f-legal">Aviso legal</a> ·
+        <a href="/cgv-paylink/" id="f-terms">Condiciones</a> ·
+        <a href="/contact/" id="f-contact">Contacto</a>
+      </div>
+    </footer>
+  </div>
+
+  <script>
+    const T = {
+      es: {
+        subBrand:"PayLink",
+        title:"⚠️ Pago cancelado",
+        intro:"No se realizó el pago. No se ha cobrado nada.",
+        warnBox:"Si tuviste un error, puedes intentarlo de nuevo. PayLink incluye acompañamiento y links reutilizables.",
+        stepsTitle:"¿Qué puedes hacer ahora?",
+        steps:[
+          "1️⃣ <b>Intenta de nuevo</b> y elige tu fórmula (Starter / Pro / Business).",
+          "2️⃣ Si tu banco bloquea el pago, prueba con otra tarjeta o método.",
+          "3️⃣ Si necesitas ayuda, contáctanos por email."
+        ],
+        retry:"🔁 Intentar de nuevo",
+        mail:"📧 Contacto",
+        home:"← Volver",
+        emailSubject:"PayLink — Pago cancelado",
+        emailBody:"Hola Maavnica, intenté pagar PayLink pero el pago fue cancelado. ¿Me pueden ayudar? \n\nPaís: ____ \nActividad: ____ \nDispositivo: ____"
+      },
+      fr: {
+        subBrand:"PayLink",
+        title:"⚠️ Paiement annulé",
+        intro:"Le paiement n’a pas été effectué. Aucun débit n’a été réalisé.",
+        warnBox:"En cas d’erreur, tu peux réessayer. PayLink inclut un accompagnement et des liens réutilisables.",
+        stepsTitle:"Que faire maintenant ?",
+        steps:[
+          "1️⃣ <b>Réessaie</b> et choisis ta formule (Starter / Pro / Business).",
+          "2️⃣ Si la banque bloque, essaye une autre carte ou un autre moyen de paiement.",
+          "3️⃣ Si besoin, contacte-nous par email."
+        ],
+        retry:"🔁 Réessayer",
+        mail:"📧 Contact",
+        home:"← Retour",
+        emailSubject:"PayLink — Paiement annulé",
+        emailBody:"Bonjour Maavnica, j’ai essayé de payer PayLink mais le paiement a été annulé. Pouvez-vous m’aider ? \n\nPays : ____ \nActivité : ____ \nAppareil : ____"
+      },
+      en: {
+        subBrand:"PayLink",
+        title:"⚠️ Payment canceled",
+        intro:"The payment didn’t go through. Nothing was charged.",
+        warnBox:"If you hit an error, you can try again. PayLink includes guidance and reusable links.",
+        stepsTitle:"What can you do now?",
+        steps:[
+          "1️⃣ <b>Try again</b> and choose your plan (Starter / Pro / Business).",
+          "2️⃣ If your bank blocks it, try another card or payment method.",
+          "3️⃣ If you need help, contact us by email."
+        ],
+        retry:"🔁 Try again",
+        mail:"📧 Contact",
+        home:"← Back",
+        emailSubject:"PayLink — Payment canceled",
+        emailBody:"Hi Maavnica, I tried to pay for PayLink but the payment was canceled. Can you help? \n\nCountry: ____ \nBusiness: ____ \nDevice: ____"
+      }
+    };
+
+    const el = (id) => document.getElementById(id);
+
+    function qs(name){
+      const u = new URL(window.location.href);
+      return u.searchParams.get(name);
+    }
+    function setQs(name, value){
+      const u = new URL(window.location.href);
+      u.searchParams.set(name, value);
+      window.history.replaceState({}, "", u);
+    }
+
+    let lang = (qs("lang") || "es").toLowerCase();
+    if(!T[lang]) lang = "es";
+
+    function render(){
+      const t = T[lang];
+      document.documentElement.lang = lang;
+
+      el("subBrand").textContent = t.subBrand;
+      el("title").textContent = t.title;
+      el("intro").textContent = t.intro;
+      el("warnBox").textContent = t.warnBox;
+
+      el("stepsTitle").textContent = t.stepsTitle;
+
+      const stepsEl = el("steps");
+      stepsEl.innerHTML = "";
+      t.steps.forEach(s => {
+        const d = document.createElement("div");
+        d.className = "step";
+        d.innerHTML = s;
+        stepsEl.appendChild(d);
+      });
+
+      el("retryBtn").textContent = t.retry;
+      el("mailBtn").textContent = t.mail;
+      el("homeBtn").textContent = t.home;
+
+      // Make retry keep language
+      el("retryBtn").href = `/order/?lang=${lang}`;
+
+      // Email link
+      el("mailBtn").href = `mailto:contact@maavnica.com?subject=${encodeURIComponent(t.emailSubject)}&body=${encodeURIComponent(t.emailBody)}`;
+
+      // Footer labels
+      el("f-legal").textContent = (lang==="fr") ? "Mentions légales" : (lang==="en") ? "Legal notice" : "Aviso legal";
+      el("f-terms").textContent = (lang==="fr") ? "CGV" : (lang==="en") ? "Terms" : "Condiciones";
+      el("f-contact").textContent = (lang==="fr") ? "Contact" : (lang==="en") ? "Contact" : "Contacto";
+
+      // Active buttons
+      el("btn-es").classList.toggle("active", lang==="es");
+      el("btn-fr").classList.toggle("active", lang==="fr");
+      el("btn-en").classList.toggle("active", lang==="en");
+
+      setQs("lang", lang);
+    }
+
+    el("btn-es").addEventListener("click", () => { lang="es"; render(); });
+    el("btn-fr").addEventListener("click", () => { lang="fr"; render(); });
+    el("btn-en").addEventListener("click", () => { lang="en"; render(); });
+
+    render();
+  </script>
+</body>
+</html>

@@ -1,0 +1,59 @@
+<!doctype html>
+<html lang="es">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Contacto — Maavnica</title>
+  <meta name="description" content="Contacto Maavnica." />
+  <meta name="theme-color" content="#0f172a" />
+  <style>
+    :root{--bg:#0b1220;--card:rgba(255,255,255,.08);--card2:rgba(255,255,255,.06);--text:rgba(255,255,255,.92);--muted:rgba(255,255,255,.72);--line:rgba(255,255,255,.12);--accent:#22c55e;--accent2:#16a34a;--shadow:0 18px 55px rgba(0,0,0,.45);--r:20px;--max:980px;}
+    *{box-sizing:border-box}
+    body{margin:0;font-family:system-ui,-apple-system,Segoe UI,Roboto,Helvetica,Arial;background:radial-gradient(900px 600px at 15% 15%, rgba(34,197,94,.18), transparent 60%),radial-gradient(900px 600px at 85% 10%, rgba(59,130,246,.14), transparent 60%),var(--bg);color:var(--text);line-height:1.5;}
+    a{color:inherit}
+    .wrap{max-width:var(--max);margin:0 auto;padding:22px 18px 60px;}
+    header{display:flex;justify-content:space-between;align-items:center;gap:12px;padding-bottom:18px;}
+    .brand{display:flex;gap:10px;align-items:center;text-decoration:none;}
+    .logo{width:38px;height:38px;border-radius:12px;background:linear-gradient(135deg,rgba(34,197,94,.95),rgba(59,130,246,.75));}
+    .brandname{font-weight:900;letter-spacing:.22em;text-transform:uppercase;font-size:.9rem;}
+    .brandname small{display:block;letter-spacing:normal;text-transform:none;font-weight:600;color:var(--muted);font-size:.82rem;}
+    .panel{background:linear-gradient(180deg,var(--card),var(--card2));border:1px solid var(--line);border-radius:var(--r);box-shadow:var(--shadow);padding:22px;}
+    h1{margin:0 0 8px;font-size:clamp(1.45rem,2.4vw,2rem);line-height:1.2}
+    p{color:var(--muted);margin:8px 0}
+    .cta{display:inline-flex;align-items:center;justify-content:center;gap:8px;padding:12px 14px;border-radius:14px;background:linear-gradient(135deg,var(--accent),var(--accent2));color:#06110a;font-weight:900;text-decoration:none;box-shadow:0 18px 45px rgba(34,197,94,.22);margin-top:10px;}
+    .back{display:inline-flex;gap:8px;align-items:center;color:var(--muted);text-decoration:none;border-bottom:1px dashed rgba(255,255,255,.25)}
+    footer{margin-top:26px;padding-top:18px;border-top:1px solid var(--line);display:flex;flex-wrap:wrap;justify-content:space-between;gap:12px;color:var(--muted);font-size:.92rem;}
+    footer a{color:var(--muted);text-decoration:none;border-bottom:1px dashed rgba(255,255,255,.25)}
+    footer a:hover{color:var(--text)}
+  </style>
+</head>
+<body>
+  <div class="wrap">
+    <header>
+      <a class="brand" href="/">
+        <div class="logo"></div>
+        <div class="brandname">MAAVNICA<small>Contacto</small></div>
+      </a>
+      <a class="back" href="/">← Volver</a>
+    </header>
+
+    <main class="panel">
+      <h1>Contacto</h1>
+      <p>Para cualquier pregunta sobre Maavnica o PayLink:</p>
+      <p><b>Email:</b> <a href="mailto:contact@maavnica.com">contact@maavnica.com</a></p>
+      <p><b>Tiempo de respuesta:</b> 48 horas hábiles (estimado).</p>
+
+      <a class="cta" href="mailto:contact@maavnica.com">Enviar un email</a>
+    </main>
+
+    <footer>
+      <div><b>Maavnica</b> — Soluciones digitales simples para profesionales.</div>
+      <div>
+        <a href="/mentions-legales/">Aviso legal</a> ·
+        <a href="/cgv-paylink/">Condiciones</a> ·
+        <a href="/">Inicio</a>
+      </div>
+    </footer>
+  </div>
+</body>
+</html>

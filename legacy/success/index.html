@@ -1,0 +1,284 @@
+<!doctype html>
+<html lang="es">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Pago confirmado — PayLink</title>
+  <meta name="description" content="Confirmación de pago PayLink y próximos pasos para activar tus links de pago." />
+  <meta name="theme-color" content="#0f172a" />
+  <style>
+    :root{
+      --bg:#0b1220; --card:rgba(255,255,255,.08); --card2:rgba(255,255,255,.06);
+      --text:rgba(255,255,255,.92); --muted:rgba(255,255,255,.72); --line:rgba(255,255,255,.12);
+      --accent:#22c55e; --accent2:#16a34a; --shadow:0 18px 55px rgba(0,0,0,.45);
+      --radius:20px; --max:1040px;
+    }
+    *{box-sizing:border-box}
+    body{
+      margin:0;
+      font-family:system-ui,-apple-system,Segoe UI,Roboto,Helvetica,Arial;
+      background:
+        radial-gradient(900px 600px at 15% 15%, rgba(34,197,94,.22), transparent 60%),
+        radial-gradient(900px 600px at 85% 10%, rgba(59,130,246,.18), transparent 60%),
+        var(--bg);
+      color:var(--text);
+      line-height:1.45;
+    }
+    a{color:inherit}
+    .wrap{max-width:var(--max);margin:0 auto;padding:22px 18px 60px}
+    header{display:flex;justify-content:space-between;align-items:center;gap:12px;padding-bottom:18px}
+    .brand{display:flex;gap:10px;align-items:center;text-decoration:none}
+    .logo{width:38px;height:38px;border-radius:12px;background:linear-gradient(135deg,rgba(34,197,94,.95),rgba(59,130,246,.75))}
+    .brandname{font-weight:900;letter-spacing:.22em;text-transform:uppercase;font-size:.9rem}
+    .brandname small{display:block;letter-spacing:normal;text-transform:none;font-weight:600;color:var(--muted);font-size:.82rem}
+
+    .lang{display:flex;gap:8px}
+    .lang button{
+      cursor:pointer;
+      padding:7px 10px;
+      border:1px solid var(--line);
+      border-radius:999px;
+      background:rgba(255,255,255,.03);
+      color:var(--muted);
+      font-weight:900;
+    }
+    .lang button.active{color:var(--text);border-color:rgba(34,197,94,.45);background:rgba(34,197,94,.10)}
+
+    .panel{
+      background:linear-gradient(180deg,var(--card),var(--card2));
+      border:1px solid var(--line);
+      border-radius:var(--radius);
+      box-shadow:var(--shadow);
+      padding:24px;
+    }
+    h1{margin:0 0 10px;font-size:clamp(1.55rem,2.6vw,2.2rem);line-height:1.15}
+    .lead{margin:0 0 14px;color:var(--muted);font-size:1.05rem}
+
+    .ok{
+      border:1px solid rgba(34,197,94,.35);
+      background:rgba(34,197,94,.10);
+      padding:12px 14px;
+      border-radius:14px;
+      color:var(--muted);
+      margin:12px 0 16px;
+    }
+    .steps{display:grid;gap:12px;margin-top:12px}
+    .step{
+      border:1px solid var(--line);
+      border-radius:14px;
+      padding:14px;
+      background:rgba(255,255,255,.03);
+      color:var(--muted);
+    }
+    .step b{color:var(--text)}
+    .ctaRow{display:flex;flex-wrap:wrap;gap:10px;margin-top:16px}
+    .cta{
+      display:inline-flex;justify-content:center;align-items:center;gap:8px;
+      padding:12px 14px;border-radius:14px;
+      background:linear-gradient(135deg,var(--accent),var(--accent2));
+      color:#06110a;font-weight:900;text-decoration:none;
+      box-shadow:0 18px 45px rgba(34,197,94,.25);
+    }
+    .ghost{
+      display:inline-flex;justify-content:center;align-items:center;gap:8px;
+      padding:12px 14px;border-radius:14px;text-decoration:none;
+      border:1px solid rgba(255,255,255,.18);
+      background:rgba(255,255,255,.03);
+      color:var(--text);font-weight:900;
+    }
+    code{
+      display:block;
+      background:rgba(255,255,255,.06);
+      padding:10px 12px;
+      border-radius:12px;
+      color:rgba(255,255,255,.88);
+      overflow:auto;
+      white-space:pre-wrap;
+      word-break:break-word;
+      margin-top:10px;
+    }
+    footer{
+      margin-top:40px;padding-top:18px;border-top:1px solid var(--line);
+      display:flex;flex-wrap:wrap;justify-content:space-between;gap:12px;
+      color:var(--muted);font-size:.9rem;
+    }
+    footer a{color:var(--muted);text-decoration:none;border-bottom:1px dashed rgba(255,255,255,.25)}
+    footer a:hover{color:var(--text)}
+  </style>
+</head>
+
+<body>
+  <div class="wrap">
+    <header>
+      <a class="brand" href="/paylink/">
+        <div class="logo"></div>
+        <div class="brandname">MAAVNICA<small id="subBrand">PayLink</small></div>
+      </a>
+
+      <div class="lang" aria-label="Language">
+        <button id="btn-es" type="button">ES</button>
+        <button id="btn-fr" type="button">FR</button>
+        <button id="btn-en" type="button">EN</button>
+      </div>
+    </header>
+
+    <main class="panel">
+      <h1 id="title">✅ Pago confirmado</h1>
+      <p id="intro" class="lead">Gracias. Hemos recibido tu pago. Ahora activamos tu PayLink.</p>
+
+      <div class="ok" id="okBox"></div>
+
+      <h2 id="stepsTitle">Próximos pasos</h2>
+      <div class="steps" id="steps"></div>
+
+      <div class="ctaRow">
+        <a id="waBtn" class="cta" href="#" target="_blank" rel="noopener">💬 WhatsApp</a>
+        <a id="mailBtn" class="ghost" href="#">📧 Email</a>
+        <a id="homeBtn" class="ghost" href="/paylink/">← Volver</a>
+      </div>
+
+      <p id="copyTitle" class="lead" style="margin-top:16px"></p>
+      <code id="msgCode"></code>
+    </main>
+
+    <footer>
+      <div><b>Maavnica</b> — Soluciones digitales simples para profesionales.</div>
+      <div>
+        <a href="/mentions-legales/" id="f-legal">Aviso legal</a> ·
+        <a href="/cgv-paylink/" id="f-terms">Condiciones</a> ·
+        <a href="/contact/" id="f-contact">Contacto</a>
+      </div>
+    </footer>
+  </div>
+
+  <script>
+    const T = {
+      es: {
+        subBrand:"PayLink",
+        title:"✅ Pago confirmado",
+        intro:"Gracias. Hemos recibido tu pago. Ahora activamos tu PayLink.",
+        okBox:"<b>Recordatorio:</b> cada link es <b>reutilizable ilimitadamente</b>. Un link corresponde a <b>un monto fijo</b> (ej: 10 USD).",
+        stepsTitle:"Próximos pasos",
+        steps:[
+          "1️⃣ <b>Confirmación</b>: revisamos tu compra (automática).",
+          "2️⃣ <b>Definimos tus montos</b>: hasta <b>3 links</b> (3 montos fijos).",
+          "3️⃣ <b>Activación</b>: creamos tus links Stripe y te dejamos mensajes listos para WhatsApp (habitualmente en menos de 24h)."
+        ],
+        waText:"💬 WhatsApp",
+        mailText:"📧 Email",
+        homeText:"← Volver",
+        copyTitle:"Puedes copiar y enviar este mensaje:",
+        emailSubject:"Activación PayLink — Pago confirmado",
+        msg:`Hola Maavnica, acabo de pagar PayLink. \nNombre: ____ \nPaís: ____ \nActividad: ____ \nMontos deseados: ____ \nWhatsApp: ____`
+      },
+      fr: {
+        subBrand:"PayLink",
+        title:"✅ Paiement confirmé",
+        intro:"Merci. Nous avons bien reçu ton paiement. On active maintenant ton PayLink.",
+        okBox:"<b>Rappel :</b> chaque lien est <b>réutilisable à l’infini</b>. 1 lien correspond à <b>un montant fixe</b> (ex : 10 USD).",
+        stepsTitle:"Prochaines étapes",
+        steps:[
+          "1️⃣ <b>Confirmation</b> : on vérifie ton achat (automatique).",
+          "2️⃣ <b>Définition des montants</b> : jusqu’à <b>3 liens</b> (3 montants fixes).",
+          "3️⃣ <b>Activation</b> : on crée tes liens Stripe + messages prêts pour WhatsApp (souvent en moins de 24h)."
+        ],
+        waText:"💬 WhatsApp",
+        mailText:"📧 Email",
+        homeText:"← Retour",
+        copyTitle:"Tu peux copier/coller ce message :",
+        emailSubject:"Activation PayLink — Paiement confirmé",
+        msg:`Bonjour Maavnica, je viens de payer PayLink. \nNom : ____ \nPays : ____ \nActivité : ____ \nMontants souhaités : ____ \nWhatsApp : ____`
+      },
+      en: {
+        subBrand:"PayLink",
+        title:"✅ Payment confirmed",
+        intro:"Thank you. We’ve received your payment. We’re now activating your PayLink.",
+        okBox:"<b>Reminder:</b> each link is <b>reusable unlimited times</b>. One link equals <b>one fixed amount</b> (e.g., 10 USD).",
+        stepsTitle:"Next steps",
+        steps:[
+          "1️⃣ <b>Confirmation</b>: we verify your purchase (automatic).",
+          "2️⃣ <b>Amounts</b>: up to <b>3 links</b> (3 fixed amounts).",
+          "3️⃣ <b>Activation</b>: we create your Stripe links + ready WhatsApp messages (usually within 24h)."
+        ],
+        waText:"💬 WhatsApp",
+        mailText:"📧 Email",
+        homeText:"← Back",
+        copyTitle:"You can copy and send this message:",
+        emailSubject:"PayLink Activation — Payment confirmed",
+        msg:`Hi Maavnica, I just paid for PayLink. \nName: ____ \nCountry: ____ \nBusiness: ____ \nDesired amounts: ____ \nWhatsApp: ____`
+      }
+    };
+
+    const el = (id) => document.getElementById(id);
+
+    function qs(name){
+      const u = new URL(window.location.href);
+      return u.searchParams.get(name);
+    }
+    function setQs(name, value){
+      const u = new URL(window.location.href);
+      u.searchParams.set(name, value);
+      window.history.replaceState({}, "", u);
+    }
+
+    let lang = (qs("lang") || "es").toLowerCase();
+    if(!T[lang]) lang = "es";
+
+    function render(){
+      const t = T[lang];
+      document.documentElement.lang = lang;
+
+      el("subBrand").textContent = t.subBrand;
+      el("title").textContent = t.title;
+      el("intro").textContent = t.intro;
+      el("okBox").innerHTML = t.okBox;
+      el("stepsTitle").textContent = t.stepsTitle;
+
+      // Steps
+      const stepsEl = el("steps");
+      stepsEl.innerHTML = "";
+      t.steps.forEach(s => {
+        const d = document.createElement("div");
+        d.className = "step";
+        d.innerHTML = s;
+        stepsEl.appendChild(d);
+      });
+
+      // Buttons + footer
+      el("waBtn").textContent = t.waText;
+      el("mailBtn").textContent = t.mailText;
+      el("homeBtn").textContent = t.homeText;
+      el("copyTitle").textContent = t.copyTitle;
+
+      el("f-legal").textContent = (lang==="fr") ? "Mentions légales" : (lang==="en") ? "Legal notice" : "Aviso legal";
+      el("f-terms").textContent = (lang==="fr") ? "CGV" : (lang==="en") ? "Terms" : "Condiciones";
+      el("f-contact").textContent = (lang==="fr") ? "Contact" : (lang==="en") ? "Contact" : "Contacto";
+
+      // Email link
+      const subject = t.emailSubject;
+      const body = t.msg;
+      el("mailBtn").href = `mailto:contact@maavnica.com?subject=${encodeURIComponent(subject)}&body=${encodeURIComponent(body)}`;
+
+      // WhatsApp direct (mets ton numéro pro avec indicatif, sans + ni espaces)
+      const WA_NUMBER = "33698976100";
+      el("waBtn").href = `https://wa.me/${WA_NUMBER}?text=${encodeURIComponent(t.msg)}`;
+
+      // Copy message
+      el("msgCode").textContent = t.msg;
+
+      // active language buttons
+      el("btn-es").classList.toggle("active", lang==="es");
+      el("btn-fr").classList.toggle("active", lang==="fr");
+      el("btn-en").classList.toggle("active", lang==="en");
+
+      setQs("lang", lang);
+    }
+
+    el("btn-es").addEventListener("click", () => { lang="es"; render(); });
+    el("btn-fr").addEventListener("click", () => { lang="fr"; render(); });
+    el("btn-en").addEventListener("click", () => { lang="en"; render(); });
+
+    render();
+  </script>
+</body>
+</html>

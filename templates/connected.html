@@ -1,0 +1,12 @@
+<!doctype html><html lang="es"><head><meta charset="utf-8"/><meta name="viewport" content="width=device-width,initial-scale=1"/>
+<title>Stripe conectado</title></head><body>
+<h2>Stripe conectado</h2>
+<p><b>{{ merchant.business_name }}</b></p>
+{% if complete %}
+<p>✅ Listo para cobrar.</p>
+{% else %}
+<p>⚠️ Revisa Stripe para completar verificación si es necesario.</p>
+{% endif %}
+<p><a href="{{ paypage_url }}">Abrir mi página PayLink</a></p>
+<p><a href="/">← Volver</a></p>
+</body></html>
