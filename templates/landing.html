@@ -3,14 +3,13 @@
 <head>
   <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1" />
-  <title>Maavnica PayLink — Un link. Un pago. Sin complicaciones.</title>
+  <title>Maavnica PayLink — Cobra por WhatsApp. Cobras en tu Stripe.</title>
 
-  <meta name="description" content="Cobra por WhatsApp cuando el cliente no tiene efectivo. Activa tu PayLink (abonnement mensual y página PayLink lista) y recibe pagos directamente en tu cuenta." />
+  <meta name="description" content="Cobra por WhatsApp cuando el cliente no tiene efectivo. Activa tu PayLink (suscripción mensual + página lista) y recibe pagos directamente en tu cuenta Stripe con Stripe Connect." />
   <meta name="theme-color" content="#0f172a" />
 
-  <!-- Open Graph -->
   <meta property="og:title" content="Maavnica PayLink" />
-  <meta property="og:description" content="Un link de pago simple, seguro y reutilizable para cobrar por WhatsApp." />
+  <meta property="og:description" content="Un link de pago simple, seguro y reutilizable para cobrar por WhatsApp. Cobras directamente en tu Stripe (Connect)." />
   <meta property="og:type" content="website" />
 
   <style>
@@ -107,6 +106,7 @@
       color:var(--muted);
     }
 
+    .row{display:flex;gap:12px;flex-wrap:wrap;align-items:center;margin-top:10px}
     .cta{
       display:inline-flex;
       justify-content:center;
@@ -119,7 +119,19 @@
       font-weight:900;
       text-decoration:none;
       box-shadow:0 18px 45px rgba(34,197,94,.25);
-      margin-top:10px;
+    }
+    .ghost{
+      display:inline-flex;
+      justify-content:center;
+      align-items:center;
+      gap:8px;
+      padding:14px 18px;
+      border-radius:14px;
+      border:1px solid var(--line);
+      background:rgba(255,255,255,.03);
+      color:var(--text);
+      font-weight:800;
+      text-decoration:none;
     }
 
     .price{
@@ -133,23 +145,24 @@
       font-weight:700;
     }
 
-    .section{
-      margin-top:26px;
-    }
-    .section h2{
-      margin:0 0 12px;
-      font-size:1.25rem;
-    }
-
-    .steps{
-      display:grid;
-      gap:12px;
-    }
+    .section{margin-top:26px;}
+    .section h2{margin:0 0 12px;font-size:1.25rem;}
+    .steps{display:grid;gap:12px;}
     .step{
       border:1px solid var(--line);
       border-radius:14px;
       padding:14px;
       background:rgba(255,255,255,.03);
+      color:var(--muted);
+    }
+    .note{
+      margin-top:14px;
+      padding:12px 14px;
+      border-radius:14px;
+      border:1px solid rgba(34,197,94,.28);
+      background:rgba(34,197,94,.08);
+      color:rgba(255,255,255,.80);
+      font-size:.95rem;
     }
 
     footer{
@@ -169,44 +182,39 @@
       border-bottom:1px dashed rgba(255,255,255,.25);
     }
     footer a:hover{color:var(--text)}
-
-    @media(max-width:900px){
-      .wrap{padding:18px 14px 50px}
-    }
   </style>
 </head>
 
 <body>
   <div class="wrap">
-
     <header>
       <a class="brand" href="/">
         <div class="logo"></div>
         <div class="brandname">
           MAAVNICA
-          <small>PayLink</small>
+          <small>PayLink (Stripe Connect)</small>
         </div>
       </a>
     </header>
 
     <main class="panel">
-
       <h1>Cobra por WhatsApp cuando el cliente no tiene efectivo</h1>
       <p class="lead">
-        PayLink es un <b>link de pago simple, seguro y reutilizable</b> para profesionales que trabajan por WhatsApp.
+        PayLink es una <b>página de pago simple, segura y reutilizable</b> para profesionales que trabajan por WhatsApp.
+        <br/>Lo más importante: <b>cobras directamente en tu propia cuenta Stripe</b> gracias a <b>Stripe Connect</b>.
       </p>
 
       <div class="bullets">
         <div class="chip">💳 Tarjeta bancaria</div>
         <div class="chip">📲 Apple Pay / Google Pay</div>
-        <div class="chip">🌍 Tarjetas locales e internacionales</div>
         <div class="chip">🔐 Pago seguro (Stripe)</div>
+        <div class="chip">✅ Cobro directo en tu Stripe</div>
       </div>
 
-      <!-- À REMPLACER PAR TON LIEN STRIPE -->
-      <a class="cta" href="/start">
-        Activar PayLink · oferta de lanzamiento
-      </a>
+      <div class="row">
+        <a class="cta" href="/start">Activar mi PayLink</a>
+        <a class="ghost" href="{{ demo_url }}">Ver una demo</a>
+      </div>
 
       <div class="price">
         19 USD/mes <span>· precio de lanzamiento · suscripción</span>
@@ -215,19 +223,19 @@
       <div class="section">
         <h2>¿Cómo funciona?</h2>
         <div class="steps">
-          <div class="step">1️⃣ Activas PayLink con un suscripción.</div>
-          <div class="step">2️⃣ Envías tu link por WhatsApp, SMS o email.</div>
-          <div class="step">3️⃣ Te creamos hasta 3 enlaces de pago reutilizables.</div>
+          <div class="step">1️⃣ Rellenas el formulario (tu negocio, tu WhatsApp y tus montos).</div>
+          <div class="step">2️⃣ Conectas tu cuenta Stripe (Stripe Connect). Tú eres el que cobra.</div>
+          <div class="step">3️⃣ Recibes tu página PayLink con botones de pago y botón WhatsApp listo.</div>
         </div>
       </div>
 
       <div class="section">
         <h2>Información importante</h2>
-        <p class="lead">
-          Pagos procesados por Stripe. Las comisiones de procesamiento se aplican automáticamente según las condiciones de Stripe.<br/>Cada activación PayLink incluye la creación de hasta 3 enlaces de pago.
-        </p>
+        <div class="note">
+          Pagos procesados por Stripe. Stripe aplica sus comisiones según su tarifa.
+          Maavnica es un proveedor técnico (no es banco y no recibe los fondos del vendedor cuando Stripe Connect está activado).
+        </div>
       </div>
-
     </main>
 
     <footer>
@@ -236,17 +244,12 @@
         Soluciones digitales simples para profesionales.
       </div>
       <div>
-        <a href="/legacy/mentions-legales/">Mentions legales</a> ·
-        <a href="/legacy/cgv-paylink/">Condiciones generales</a> ·
-        <a href="/legacy/contact/">Contacto</a>
+        <a href="/mentions-legales">Mentions légales</a> ·
+        <a href="/cgv-paylink">Condiciones</a> ·
+        <a href="/contact">Contacto</a>
       </div>
     </footer>
-
   </div>
-
-  <!--
-    TODO AVANT MISE EN LIGNE :
-    - Remplacer STRIPE_PAYMENT_LINK par https://buy.stripe.com/XXXX
-  -->
 </body>
 </html>
+

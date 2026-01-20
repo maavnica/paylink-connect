@@ -3,7 +3,6 @@ import re
 import sqlite3
 from datetime import datetime
 from typing import Optional
-
 from urllib.parse import quote_plus
 
 from fastapi import FastAPI, Request, Form, HTTPException
@@ -13,10 +12,13 @@ from fastapi.templating import Jinja2Templates
 
 import stripe
 
-BASE_DIR = os.path.dirname(os.path.dirname(__file__))
-DB_PATH = os.path.join(BASE_DIR, "db", "paylink.db")
+# ------------------------------------------------------------
+# Paths / Config
+# ------------------------------------------------------------
 
-# ---- Config via env ----
+PROJECT_ROOT = os.path.dirname(os.path.dirname(__file__))  # .../paylink_connect
+DB_PATH = os.path.join(PROJECT_ROOT, "db", "paylink.db")
+
 STRIPE_SECRET_KEY = os.getenv("STRIPE_SECRET_KEY", "").strip()
 STRIPE_CLIENT_ID = os.getenv("STRIPE_CLIENT_ID", "").strip()  # starts with ca_
 BASE_URL = os.getenv("BASE_URL", "http://127.0.0.1:8000").rstrip("/")
@@ -25,14 +27,23 @@ if STRIPE_SECRET_KEY:
     stripe.api_key = STRIPE_SECRET_KEY
 
 
+def require_stripe_config():
+    if not STRIPE_SECRET_KEY:
+        raise HTTPException(500, "STRIPE_SECRET_KEY missing (Render env var)")
+
+
+# ------------------------------------------------------------
+# DB helpers
+# ------------------------------------------------------------
+
 def db() -> sqlite3.Connection:
+    os.makedirs(os.path.dirname(DB_PATH), exist_ok=True)
     conn = sqlite3.connect(DB_PATH)
     conn.row_factory = sqlite3.Row
     return conn
 
 
 def init_db() -> None:
-    os.makedirs(os.path.dirname(DB_PATH), exist_ok=True)
     with db() as conn:
         conn.execute(
             """
@@ -77,35 +88,21 @@ def unique_slug(base_slug: str) -> str:
 
 def get_merchant_by_id(merchant_id: int):
     with db() as conn:
-        row = conn.execute("SELECT * FROM merchants WHERE id=?", (merchant_id,)).fetchone()
-    return row
+        return conn.execute("SELECT * FROM merchants WHERE id=?", (merchant_id,)).fetchone()
 
 
 def get_merchant_by_slug(slug: str):
     with db() as conn:
-        row = conn.execute("SELECT * FROM merchants WHERE slug=?", (slug,)).fetchone()
-    return row
+        return conn.execute("SELECT * FROM merchants WHERE slug=?", (slug,)).fetchone()
 
 
-def require_stripe_config():
-    if not STRIPE_SECRET_KEY:
-        raise HTTPException(500, "STRIPE_SECRET_KEY missing")
+def normalize_whatsapp(raw: str) -> str:
+    # Digits only (wa.me format), no +
+    digits = re.sub(r"\D+", "", raw or "")
+    return digits
 
 
-app = FastAPI(title="Maavnica PayLink (Stripe Connect)")
-
-# templates
-templates = Jinja2Templates(directory=os.path.join(BASE_DIR, "templates"))
-
-# static + legacy pages
-app.mount("/static", StaticFiles(directory=os.path.join(BASE_DIR, "static")), name="static")
-app.mount("/legacy", StaticFiles(directory=os.path.join(BASE_DIR, "legacy")), name="legacy")
-
-
-@app.on_event("startup")
-def _startup():
-    init_db()
-    # seed a demo merchant if none exists
+def seed_demo() -> None:
     with db() as conn:
         if not conn.execute("SELECT 1 FROM merchants WHERE slug='demo-carlos'").fetchone():
             conn.execute(
@@ -128,7 +125,31 @@ def _startup():
             )
 
 
-# ---------------- Pages ----------------
+# ------------------------------------------------------------
+# App / Static / Templates
+# ------------------------------------------------------------
+
+app = FastAPI(title="Maavnica PayLink (Stripe Connect)")
+
+templates = Jinja2Templates(directory=os.path.join(PROJECT_ROOT, "templates"))
+
+# Render/Git: folder must exist. (You already fixed with .gitkeep)
+app.mount("/static", StaticFiles(directory=os.path.join(PROJECT_ROOT, "static")), name="static")
+
+# Keep legacy mount ONLY if you still want to access old pages.
+# If you don't need it, you can remove these 2 lines.
+app.mount("/legacy", StaticFiles(directory=os.path.join(PROJECT_ROOT, "legacy")), name="legacy")
+
+
+@app.on_event("startup")
+def _startup():
+    init_db()
+    seed_demo()
+
+
+# ------------------------------------------------------------
+# Pages
+# ------------------------------------------------------------
 
 @app.get("/", response_class=HTMLResponse)
 def landing(request: Request):
@@ -146,10 +167,7 @@ def landing(request: Request):
 def start_form(request: Request):
     return templates.TemplateResponse(
         "start.html",
-        {
-            "request": request,
-            "base_url": BASE_URL,
-        },
+        {"request": request, "base_url": BASE_URL},
     )
 
 
@@ -166,8 +184,7 @@ def start_submit(
 ):
     slug = unique_slug(business_name)
 
-    # normalize whatsapp to digits only
-    whatsapp_norm = re.sub(r"\D+", "", whatsapp)
+    whatsapp_norm = normalize_whatsapp(whatsapp)
     if len(whatsapp_norm) < 8:
         raise HTTPException(400, "WhatsApp number seems invalid")
 
@@ -212,6 +229,8 @@ def connect_page(request: Request, merchant_id: int):
     )
 
 
+# ------------------- Stripe Connect -------------------
+
 @app.get("/stripe/connect/start")
 def stripe_connect_start(merchant_id: int):
     require_stripe_config()
@@ -220,10 +239,10 @@ def stripe_connect_start(merchant_id: int):
     if not m:
         raise HTTPException(404, "Merchant not found")
 
-    # Create (or reuse) a connected account
     acct_id = m["stripe_account_id"]
+
+    # Create a connected account (Standard is simplest to start)
     if not acct_id:
-        # Standard account (recommended). Stripe handles KYC.
         acct = stripe.Account.create(
             type="standard",
             country=(m["country"] or None),
@@ -264,7 +283,6 @@ def stripe_connect_return(request: Request, merchant_id: int):
     if not acct_id:
         raise HTTPException(400, "No connected account")
 
-    # Check whether onboarding is complete
     acct = stripe.Account.retrieve(acct_id)
     complete = bool(acct.get("charges_enabled")) and bool(acct.get("payouts_enabled"))
 
@@ -274,16 +292,21 @@ def stripe_connect_return(request: Request, merchant_id: int):
             (1 if complete else 0, merchant_id),
         )
 
+    # Reload merchant to reflect updated status in template
+    m2 = get_merchant_by_id(merchant_id)
+
     return templates.TemplateResponse(
         "connected.html",
         {
             "request": request,
-            "merchant": dict(m),
+            "merchant": dict(m2),
             "complete": complete,
-            "paypage_url": f"{BASE_URL}/p/{m['slug']}",
+            "paypage_url": f"{BASE_URL}/p/{m2['slug']}",
         },
     )
 
+
+# ------------------- Pay page -------------------
 
 @app.get("/p/{slug}", response_class=HTMLResponse)
 def pay_page(request: Request, slug: str, success: Optional[str] = None):
@@ -307,14 +330,31 @@ def pay_page(request: Request, slug: str, success: Optional[str] = None):
     )
 
 
-# ---------------- API ----------------
+# ------------------------------------------------------------
+# Legal pages (served from templates, not legacy)
+# ------------------------------------------------------------
+
+@app.get("/mentions-legales", response_class=HTMLResponse)
+def mentions_legales(request: Request):
+    return templates.TemplateResponse("mentions-legales.html", {"request": request})
+
+
+@app.get("/cgv-paylink", response_class=HTMLResponse)
+def cgv_paylink(request: Request):
+    return templates.TemplateResponse("cgv-paylink.html", {"request": request})
+
+
+@app.get("/contact", response_class=HTMLResponse)
+def contact(request: Request):
+    return templates.TemplateResponse("contact.html", {"request": request})
+
+
+# ------------------------------------------------------------
+# API: create checkout session (direct charge on connected account)
+# ------------------------------------------------------------
 
 @app.post("/api/create-checkout-session")
 def create_checkout_session(slug: str = Form(...), amount: int = Form(...)):
-    """Creates a Stripe Checkout Session on the connected account.
-
-    amount is in major currency units (e.g. 10 USD). This V1 is intentionally simple.
-    """
     require_stripe_config()
 
     m = get_merchant_by_slug(slug)
@@ -327,7 +367,10 @@ def create_checkout_session(slug: str = Form(...), amount: int = Form(...)):
 
     currency = (m["currency"] or "USD").lower()
 
-    # Minimal product. You can later replace with real products or metadata.
+    # amount in major units (e.g. 10 USD) -> convert to cents
+    if int(amount) <= 0:
+        raise HTTPException(400, "Invalid amount")
+
     session = stripe.checkout.Session.create(
         mode="payment",
         line_items=[
@@ -342,14 +385,17 @@ def create_checkout_session(slug: str = Form(...), amount: int = Form(...)):
         ],
         success_url=f"{BASE_URL}/p/{m['slug']}?success=1",
         cancel_url=f"{BASE_URL}/p/{m['slug']}?success=0",
-        # This makes the API call on the connected account (direct charge)
+        # Direct charge on the connected account:
         stripe_account=acct_id,
     )
 
     return JSONResponse({"url": session["url"]})
 
 
-# Convenience: redirect old static site paths to legacy
+# ------------------------------------------------------------
+# Optional: keep old static site entrypoint for compatibility
+# ------------------------------------------------------------
+
 @app.get("/paylink")
 @app.get("/paylink/")
 def _old_paylink_redirect():
