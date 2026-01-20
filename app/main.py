@@ -2,13 +2,14 @@ import os
 import re
 import sqlite3
 from datetime import datetime
-from typing import Optional
+from typing import Optional, Any, Dict
 from urllib.parse import quote_plus
 
 from fastapi import FastAPI, Request, Form, HTTPException
 from fastapi.responses import HTMLResponse, RedirectResponse, JSONResponse
 from fastapi.staticfiles import StaticFiles
 from fastapi.templating import Jinja2Templates
+from pydantic import BaseModel, Field
 
 import stripe
 
@@ -103,23 +104,31 @@ def normalize_whatsapp(raw: str) -> str:
 
 
 def seed_demo() -> None:
+    """
+    Creates:
+      - /p/carlos        (WOW demo page)
+      - /demo/carlos     (short marketing URL redirect)
+    """
     with db() as conn:
-        if not conn.execute("SELECT 1 FROM merchants WHERE slug='demo-carlos'").fetchone():
+        if not conn.execute("SELECT 1 FROM merchants WHERE slug='carlos'").fetchone():
             conn.execute(
                 """
-                INSERT INTO merchants(slug,business_name,contact_name,whatsapp,country,currency,amount1,amount2,amount3,created_at)
+                INSERT INTO merchants(
+                  slug,business_name,contact_name,whatsapp,country,currency,
+                  amount1,amount2,amount3,created_at
+                )
                 VALUES(?,?,?,?,?,?,?,?,?,?)
                 """,
                 (
-                    "demo-carlos",
-                    "Carlos Taxi",
+                    "carlos",
+                    "Carlos Martinez · Reparación express de celulares",
                     "Carlos",
-                    "50581234567",
+                    "50588887777",  # Nicaragua fake number for demo
                     "NI",
                     "USD",
-                    10,
-                    20,
-                    50,
+                    25,
+                    49,
+                    79,
                     datetime.utcnow().isoformat(),
                 ),
             )
@@ -133,11 +142,10 @@ app = FastAPI(title="Maavnica PayLink (Stripe Connect)")
 
 templates = Jinja2Templates(directory=os.path.join(PROJECT_ROOT, "templates"))
 
-# Render/Git: folder must exist. (You already fixed with .gitkeep)
+# Ensure folders exist in repo
 app.mount("/static", StaticFiles(directory=os.path.join(PROJECT_ROOT, "static")), name="static")
 
-# Keep legacy mount ONLY if you still want to access old pages.
-# If you don't need it, you can remove these 2 lines.
+# Optional legacy mount
 app.mount("/legacy", StaticFiles(directory=os.path.join(PROJECT_ROOT, "legacy")), name="legacy")
 
 
@@ -158,17 +166,14 @@ def landing(request: Request):
         {
             "request": request,
             "base_url": BASE_URL,
-            "demo_url": f"{BASE_URL}/p/demo-carlos",
+            "demo_url": f"{BASE_URL}/demo/carlos",
         },
     )
 
 
 @app.get("/start", response_class=HTMLResponse)
 def start_form(request: Request):
-    return templates.TemplateResponse(
-        "start.html",
-        {"request": request, "base_url": BASE_URL},
-    )
+    return templates.TemplateResponse("start.html", {"request": request, "base_url": BASE_URL})
 
 
 @app.post("/start")
@@ -178,9 +183,9 @@ def start_submit(
     whatsapp: str = Form(...),
     country: str = Form(""),
     currency: str = Form("USD"),
-    amount1: int = Form(10),
-    amount2: int = Form(20),
-    amount3: int = Form(50),
+    amount1: int = Form(25),
+    amount2: int = Form(49),
+    amount3: int = Form(79),
 ):
     slug = unique_slug(business_name)
 
@@ -229,6 +234,15 @@ def connect_page(request: Request, merchant_id: int):
     )
 
 
+# ------------------------------------------------------------
+# DEMO: short URL
+# ------------------------------------------------------------
+
+@app.get("/demo/carlos")
+def demo_carlos():
+    return RedirectResponse(url="/p/carlos", status_code=302)
+
+
 # ------------------- Stripe Connect -------------------
 
 @app.get("/stripe/connect/start")
@@ -241,7 +255,7 @@ def stripe_connect_start(merchant_id: int):
 
     acct_id = m["stripe_account_id"]
 
-    # Create a connected account (Standard is simplest to start)
+    # Standard connected account
     if not acct_id:
         acct = stripe.Account.create(
             type="standard",
@@ -253,10 +267,7 @@ def stripe_connect_start(merchant_id: int):
         )
         acct_id = acct["id"]
         with db() as conn:
-            conn.execute(
-                "UPDATE merchants SET stripe_account_id=? WHERE id=?",
-                (acct_id, merchant_id),
-            )
+            conn.execute("UPDATE merchants SET stripe_account_id=? WHERE id=?", (acct_id, merchant_id))
 
     refresh_url = f"{BASE_URL}/connect/{merchant_id}?refresh=1"
     return_url = f"{BASE_URL}/stripe/connect/return?merchant_id={merchant_id}"
@@ -292,7 +303,6 @@ def stripe_connect_return(request: Request, merchant_id: int):
             (1 if complete else 0, merchant_id),
         )
 
-    # Reload merchant to reflect updated status in template
     m2 = get_merchant_by_id(merchant_id)
 
     return templates.TemplateResponse(
@@ -316,7 +326,10 @@ def pay_page(request: Request, slug: str, success: Optional[str] = None):
 
     data = dict(m)
     wa = data.get("whatsapp", "")
-    wa_msg = f"Hola, quiero pagar por PayLink ({data.get('business_name','')})."
+
+    # Spanish WhatsApp message
+    wa_msg = f"Hola, quiero pagar por PayLink ({data.get('business_name','')}). ¿Qué monto me indicás?"
+    whatsapp_url = f"https://wa.me/{wa}?text=" + quote_plus(wa_msg)
 
     return templates.TemplateResponse(
         "paypage.html",
@@ -324,14 +337,14 @@ def pay_page(request: Request, slug: str, success: Optional[str] = None):
             "request": request,
             "merchant": data,
             "base_url": BASE_URL,
-            "whatsapp_url": f"https://wa.me/{wa}?text=" + quote_plus(wa_msg),
+            "whatsapp_url": whatsapp_url,
             "success": success,
         },
     )
 
 
 # ------------------------------------------------------------
-# Legal pages (served from templates, not legacy)
+# Legal pages (served from templates)
 # ------------------------------------------------------------
 
 @app.get("/mentions-legales", response_class=HTMLResponse)
@@ -350,26 +363,32 @@ def contact(request: Request):
 
 
 # ------------------------------------------------------------
-# API: create checkout session (direct charge on connected account)
+# API: create checkout session
+#   - Accepts JSON (for the WOW paypage fetch)
+#   - Also accepts Form (for older templates) for backward compatibility
 # ------------------------------------------------------------
 
-@app.post("/api/create-checkout-session")
-def create_checkout_session(slug: str = Form(...), amount: int = Form(...)):
-    require_stripe_config()
+class CheckoutRequest(BaseModel):
+    amount: int = Field(..., ge=1, description="Amount in major unit (e.g. 49 USD)")
+    currency: str = Field("usd", min_length=3, max_length=3)
+    slug: str = Field(..., min_length=1)
+    title: str = Field("Pago (PayLink)")
+    description: str = Field("Cobro vía PayLink")
 
-    m = get_merchant_by_slug(slug)
-    if not m:
-        raise HTTPException(404, "Merchant not found")
+
+def _create_stripe_session_for_merchant(m: sqlite3.Row, amount_major: int, currency: str, title: str, description: str):
+    require_stripe_config()
 
     acct_id = m["stripe_account_id"]
     if not acct_id:
-        raise HTTPException(400, "Merchant has not connected Stripe")
+        # Demo can be shown without Connect, but payment needs it.
+        raise HTTPException(400, "Merchant has not connected Stripe (Connect no completado)")
 
-    currency = (m["currency"] or "USD").lower()
-
-    # amount in major units (e.g. 10 USD) -> convert to cents
-    if int(amount) <= 0:
+    if amount_major <= 0:
         raise HTTPException(400, "Invalid amount")
+
+    currency = (currency or (m["currency"] or "USD")).lower()
+    unit_amount = int(amount_major) * 100  # cents
 
     session = stripe.checkout.Session.create(
         mode="payment",
@@ -377,18 +396,67 @@ def create_checkout_session(slug: str = Form(...), amount: int = Form(...)):
             {
                 "price_data": {
                     "currency": currency,
-                    "product_data": {"name": m["business_name"]},
-                    "unit_amount": int(amount) * 100,
+                    "product_data": {"name": title, "description": description},
+                    "unit_amount": unit_amount,
                 },
                 "quantity": 1,
             }
         ],
         success_url=f"{BASE_URL}/p/{m['slug']}?success=1",
         cancel_url=f"{BASE_URL}/p/{m['slug']}?success=0",
-        # Direct charge on the connected account:
+        # Direct charge on the connected account (Standard)
         stripe_account=acct_id,
     )
 
+    return session
+
+
+@app.post("/api/create-checkout-session")
+async def create_checkout_session(request: Request):
+    """
+    Accepts:
+      - JSON body (recommended): { amount, currency, slug, title, description }
+      - Form-encoded body (legacy): slug=...&amount=...
+    Returns: { url: "https://checkout..." }
+    """
+    require_stripe_config()
+
+    content_type = (request.headers.get("content-type") or "").lower()
+
+    payload: Dict[str, Any] = {}
+
+    if "application/json" in content_type:
+        try:
+            payload = await request.json()
+        except Exception:
+            raise HTTPException(400, "Invalid JSON body")
+        # Validate with Pydantic
+        data = CheckoutRequest(**payload)
+        slug = data.slug.strip()
+        amount = int(data.amount)
+        currency = (data.currency or "usd").strip().lower()
+        title = (data.title or "Pago (PayLink)").strip()
+        description = (data.description or "Cobro vía PayLink").strip()
+
+    else:
+        # Backward compatible form parsing
+        form = await request.form()
+        slug = str(form.get("slug", "")).strip()
+        amount = int(form.get("amount", 0) or 0)
+        currency = str(form.get("currency", "usd")).strip().lower()
+        title = str(form.get("title", "Pago (PayLink)")).strip()
+        description = str(form.get("description", "Cobro vía PayLink")).strip()
+
+        if not slug:
+            raise HTTPException(400, "Missing slug")
+        if amount <= 0:
+            raise HTTPException(400, "Invalid amount")
+
+    m = get_merchant_by_slug(slug)
+    if not m:
+        raise HTTPException(404, "Merchant not found")
+
+    session = _create_stripe_session_for_merchant(m, amount, currency, title, description)
     return JSONResponse({"url": session["url"]})
 
 
@@ -400,4 +468,5 @@ def create_checkout_session(slug: str = Form(...), amount: int = Form(...)):
 @app.get("/paylink/")
 def _old_paylink_redirect():
     return RedirectResponse(url="/legacy/index.html", status_code=302)
+
 
