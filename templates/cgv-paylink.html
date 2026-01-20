@@ -1,0 +1,128 @@
+<!doctype html>
+<html lang="es">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Condiciones — PayLink (Maavnica)</title>
+  <meta name="description" content="Condiciones del servicio Maavnica PayLink (Stripe Connect)." />
+  <meta name="theme-color" content="#0f172a" />
+  <style>
+    :root{--bg:#0b1220;--card:rgba(255,255,255,.08);--card2:rgba(255,255,255,.06);--text:rgba(255,255,255,.92);--muted:rgba(255,255,255,.72);--line:rgba(255,255,255,.12);--shadow:0 18px 55px rgba(0,0,0,.45);--r:20px;--max:980px;}
+    *{box-sizing:border-box}
+    body{margin:0;font-family:system-ui,-apple-system,Segoe UI,Roboto,Helvetica,Arial;background:radial-gradient(900px 600px at 15% 15%, rgba(34,197,94,.18), transparent 60%),radial-gradient(900px 600px at 85% 10%, rgba(59,130,246,.14), transparent 60%),var(--bg);color:var(--text);line-height:1.55;}
+    a{color:inherit}
+    .wrap{max-width:var(--max);margin:0 auto;padding:22px 18px 60px;}
+    header{display:flex;justify-content:space-between;align-items:center;gap:12px;padding-bottom:18px;}
+    .brand{display:flex;gap:10px;align-items:center;text-decoration:none;}
+    .logo{width:38px;height:38px;border-radius:12px;background:linear-gradient(135deg,rgba(34,197,94,.95),rgba(59,130,246,.75));}
+    .brandname{font-weight:900;letter-spacing:.22em;text-transform:uppercase;font-size:.9rem;}
+    .brandname small{display:block;font-weight:600;color:var(--muted);font-size:.82rem;letter-spacing:normal;text-transform:none}
+    .panel{background:linear-gradient(180deg,var(--card),var(--card2));border:1px solid var(--line);border-radius:var(--r);box-shadow:var(--shadow);padding:22px;}
+    h1{margin:0 0 8px;font-size:clamp(1.45rem,2.4vw,2rem)}
+    h2{margin:18px 0 6px;font-size:1.05rem}
+    p,li{color:var(--muted)}
+    ul{margin:8px 0 0 18px}
+    .notice{border:1px solid rgba(34,197,94,.35);background:rgba(34,197,94,.08);padding:12px;border-radius:14px;margin:14px 0;}
+    .pill{display:inline-block;padding:2px 10px;border-radius:999px;border:1px solid rgba(255,255,255,.18);color:var(--muted);font-size:.85rem}
+    footer{margin-top:26px;padding-top:18px;border-top:1px solid var(--line);display:flex;flex-wrap:wrap;justify-content:space-between;gap:12px;color:var(--muted);font-size:.92rem;}
+    footer a{color:var(--muted);text-decoration:none;border-bottom:1px dashed rgba(255,255,255,.25)}
+    footer a:hover{color:var(--text)}
+  </style>
+</head>
+<body>
+  <div class="wrap">
+    <header>
+      <a class="brand" href="/">
+        <div class="logo"></div>
+        <div class="brandname">MAAVNICA<small>Condiciones — PayLink</small></div>
+      </a>
+      <a href="/" style="color:var(--muted)">← Volver</a>
+    </header>
+
+    <main class="panel">
+      <h1>Condiciones del servicio — PayLink <span class="pill">Stripe Connect</span></h1>
+      <p>Última actualización: <b>19/01/2026</b></p>
+
+      <div class="notice">
+        <b>Resumen importante:</b><br/>
+        PayLink es una solución técnica (página de pago + botones + soporte). Con <b>Stripe Connect</b>, el vendedor
+        cobra <b>directamente</b> en su propia cuenta Stripe. <b>Maavnica no recibe ni gestiona fondos</b> de las ventas del vendedor.
+      </div>
+
+      <h2>1. Objeto</h2>
+      <p>
+        Las presentes condiciones regulan el uso del servicio <b>Maavnica PayLink</b>, que permite al vendedor
+        disponer de una página PayLink (enlace público) para solicitar pagos a sus clientes, principalmente
+        a través de WhatsApp.
+      </p>
+
+      <h2>2. Rol de Maavnica</h2>
+      <p>
+        Maavnica actúa como <b>proveedor técnico</b> de PayLink. Maavnica no es entidad bancaria, no es intermediario
+        financiero, y no procesa ni almacena datos bancarios.
+      </p>
+
+      <h2>3. Stripe Connect y cobro directo</h2>
+      <p>
+        Para activar PayLink, el vendedor debe conectar una cuenta Stripe mediante <b>Stripe Connect</b>.
+        Los cobros realizados desde la página PayLink se procesan por Stripe y se abonan <b>directamente</b>
+        en la cuenta Stripe del vendedor (según los plazos y reglas de Stripe).
+      </p>
+      <p>
+        El vendedor es responsable de completar los requisitos de verificación (KYC) y de configurar su cuenta Stripe
+        (cuenta bancaria, datos fiscales, etc.).
+      </p>
+
+      <h2>4. Tarifas, comisiones y tipo de cambio</h2>
+      <ul>
+        <li><b>Tarifa de PayLink:</b> según el plan publicado en el sitio (suscripción y/o activación, según oferta).</li>
+        <li><b>Comisiones Stripe:</b> Stripe aplica sus propias tarifas sobre los pagos procesados.</li>
+        <li><b>Tipo de cambio:</b> si el pago se realiza en una moneda diferente, el banco/Stripe puede aplicar conversión.</li>
+      </ul>
+      <p>
+        Maavnica no controla ni garantiza el importe neto recibido, ya que depende de Stripe, del método de pago
+        y/o del banco del pagador.
+      </p>
+
+      <h2>5. Relación vendedor ↔ cliente final (comprador)</h2>
+      <p>
+        PayLink facilita el cobro, pero <b>no</b> interviene en la venta de bienes/servicios del vendedor.
+        Cualquier disputa (entrega, calidad, devolución, reembolso, garantía) se gestiona entre el vendedor y su cliente final,
+        de acuerdo con sus propias condiciones.
+      </p>
+
+      <h2>6. Disponibilidad y limitación de responsabilidad</h2>
+      <p>
+        Maavnica hará esfuerzos razonables para mantener el servicio disponible, pero no será responsable de
+        interrupciones o fallos imputables a terceros (Stripe, operador móvil, banca, hosting, etc.).
+      </p>
+
+      <h2>7. Obligaciones fiscales</h2>
+      <p>
+        El vendedor es el único responsable de declarar ingresos y cumplir con obligaciones fiscales, contables y legales
+        en su país. Maavnica no presta asesoría fiscal ni legal.
+      </p>
+
+      <h2>8. Cancelación / Rescisión</h2>
+      <p>
+        La cancelación del servicio PayLink (suscripción) puede realizarse conforme al plan contratado.
+        La desconexión de Stripe o el impago puede desactivar la página PayLink.
+      </p>
+
+      <h2>9. Ley aplicable</h2>
+      <p>
+        Salvo disposición obligatoria en contrario, las presentes condiciones se rigen por la <b>ley francesa</b>.
+      </p>
+    </main>
+
+    <footer>
+      <div><b>Maavnica</b> — Soluciones digitales simples para profesionales.</div>
+      <div>
+        <a href="/mentions-legales">Aviso legal</a> ·
+        <a href="/contact">Contacto</a> ·
+        <a href="/">Inicio</a>
+      </div>
+    </footer>
+  </div>
+</body>
+</html>
