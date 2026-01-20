@@ -3,13 +3,13 @@
 <head>
   <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1" />
-  <title>Maavnica PayLink — Cobra por WhatsApp. Cobras en tu Stripe.</title>
+  <title>Maavnica PayLink — Cobrá por WhatsApp. Cobrás en tu Stripe.</title>
 
-  <meta name="description" content="Cobra por WhatsApp cuando el cliente no tiene efectivo. Activa tu PayLink (suscripción mensual + página lista) y recibe pagos directamente en tu cuenta Stripe con Stripe Connect." />
-  <meta name="theme-color" content="#0f172a" />
+  <meta name="description" content="Cobrá por WhatsApp cuando el cliente no tiene efectivo. Activá tu PayLink (página lista + suscripción) y recibí pagos directamente en tu cuenta Stripe con Stripe Connect." />
+  <meta name="theme-color" content="#0b1220" />
 
   <meta property="og:title" content="Maavnica PayLink" />
-  <meta property="og:description" content="Un link de pago simple, seguro y reutilizable para cobrar por WhatsApp. Cobras directamente en tu Stripe (Connect)." />
+  <meta property="og:description" content="Un link de pago simple, seguro y reutilizable para cobrar por WhatsApp. Cobrás directamente en tu Stripe (Connect)." />
   <meta property="og:type" content="website" />
 
   <style>
@@ -38,7 +38,7 @@
       line-height:1.45;
     }
     a{color:inherit}
-    .wrap{max-width:var(--max);margin:0 auto;padding:22px 18px 60px}
+    .wrap{max-width:var(--max);margin:0 auto;padding:22px 18px 64px}
 
     header{
       display:flex;
@@ -56,6 +56,7 @@
     .logo{
       width:38px;height:38px;border-radius:12px;
       background:linear-gradient(135deg,rgba(34,197,94,.95),rgba(59,130,246,.75));
+      box-shadow:0 14px 35px rgba(34,197,94,.18);
     }
     .brandname{
       font-weight:900;
@@ -77,13 +78,14 @@
       border:1px solid var(--line);
       border-radius:var(--radius);
       box-shadow:var(--shadow);
-      padding:24px;
+      padding:26px;
     }
 
     h1{
       margin:0 0 10px;
-      font-size:clamp(1.6rem,2.8vw,2.4rem);
-      line-height:1.15;
+      font-size:clamp(1.7rem,2.9vw,2.5rem);
+      line-height:1.12;
+      letter-spacing:-.02em;
     }
     .lead{
       margin:0 0 16px;
@@ -91,11 +93,29 @@
       font-size:1.05rem;
     }
 
+    .miniFlow{
+      margin-top:12px;
+      display:flex;
+      flex-wrap:wrap;
+      gap:10px;
+      align-items:center;
+      color:rgba(255,255,255,.82);
+      font-weight:900;
+    }
+    .flowItem{
+      border:1px solid var(--line);
+      background:rgba(255,255,255,.03);
+      border-radius:999px;
+      padding:8px 12px;
+      font-size:.92rem;
+      white-space:nowrap;
+    }
+
     .bullets{
       display:flex;
       flex-wrap:wrap;
       gap:10px;
-      margin:14px 0 18px;
+      margin:14px 0 12px;
     }
     .chip{
       border:1px solid var(--line);
@@ -104,6 +124,7 @@
       padding:8px 12px;
       font-size:.9rem;
       color:var(--muted);
+      white-space:nowrap;
     }
 
     .row{display:flex;gap:12px;flex-wrap:wrap;align-items:center;margin-top:10px}
@@ -130,13 +151,13 @@
       border:1px solid var(--line);
       background:rgba(255,255,255,.03);
       color:var(--text);
-      font-weight:800;
+      font-weight:900;
       text-decoration:none;
     }
 
     .price{
       margin-top:16px;
-      font-size:1.8rem;
+      font-size:1.85rem;
       font-weight:900;
     }
     .price span{
@@ -145,8 +166,61 @@
       font-weight:700;
     }
 
+    .grid{
+      margin-top:18px;
+      display:grid;
+      grid-template-columns:1fr 1fr;
+      gap:12px;
+    }
+    @media(max-width:860px){
+      .grid{grid-template-columns:1fr}
+    }
+    .box{
+      border:1px solid var(--line);
+      border-radius:16px;
+      padding:14px;
+      background:rgba(255,255,255,.03);
+      color:var(--muted);
+    }
+    .box b{color:rgba(255,255,255,.88)}
+    .box .k{
+      display:inline-flex;
+      align-items:center;
+      gap:8px;
+      padding:6px 10px;
+      border-radius:999px;
+      border:1px solid rgba(59,130,246,.22);
+      background:rgba(59,130,246,.08);
+      color:rgba(255,255,255,.82);
+      font-size:.86rem;
+      font-weight:900;
+      margin-bottom:8px;
+    }
+
+    .compat{
+      margin-top:12px;
+      display:flex;
+      flex-wrap:wrap;
+      gap:10px;
+      align-items:center;
+    }
+    .compat .pill{
+      display:inline-flex;
+      align-items:center;
+      gap:8px;
+      padding:8px 12px;
+      border-radius:999px;
+      border:1px solid rgba(255,255,255,.14);
+      background:rgba(0,0,0,.18);
+      color:rgba(255,255,255,.82);
+      font-weight:900;
+      font-size:.9rem;
+      white-space:nowrap;
+    }
+
     .section{margin-top:26px;}
     .section h2{margin:0 0 12px;font-size:1.25rem;}
+
     .steps{display:grid;gap:12px;}
     .step{
       border:1px solid var(--line);
@@ -155,18 +229,38 @@
       background:rgba(255,255,255,.03);
       color:var(--muted);
     }
+    .step b{color:rgba(255,255,255,.88)}
+
+    .faq{display:grid;gap:10px;}
+    details{
+      border:1px solid var(--line);
+      border-radius:14px;
+      padding:12px 14px;
+      background:rgba(255,255,255,.03);
+      color:var(--muted);
+    }
+    summary{
+      cursor:pointer;
+      font-weight:900;
+      color:rgba(255,255,255,.88);
+      list-style:none;
+    }
+    summary::-webkit-details-marker{display:none}
+    details p{margin:10px 0 0}
+
     .note{
       margin-top:14px;
       padding:12px 14px;
       border-radius:14px;
       border:1px solid rgba(34,197,94,.28);
       background:rgba(34,197,94,.08);
-      color:rgba(255,255,255,.80);
+      color:rgba(255,255,255,.82);
       font-size:.95rem;
     }
+    .note b{color:rgba(255,255,255,.9)}
 
     footer{
-      margin-top:40px;
+      margin-top:42px;
       padding-top:18px;
       border-top:1px solid var(--line);
       display:flex;
@@ -198,11 +292,19 @@
     </header>
 
     <main class="panel">
-      <h1>Cobra por WhatsApp cuando el cliente no tiene efectivo</h1>
+      <h1>Cobrá por WhatsApp cuando el cliente no tiene efectivo</h1>
+
       <p class="lead">
         PayLink es una <b>página de pago simple, segura y reutilizable</b> para profesionales que trabajan por WhatsApp.
-        <br/>Lo más importante: <b>cobras directamente en tu propia cuenta Stripe</b> gracias a <b>Stripe Connect</b>.
+        <br/>Lo más importante: <b>cobrás directamente en tu propia cuenta Stripe</b> gracias a <b>Stripe Connect</b>.
       </p>
+
+      <div class="miniFlow">
+        <div class="flowItem">💬 WhatsApp</div>
+        <div class="flowItem">🔗 Link</div>
+        <div class="flowItem">💳 Pago</div>
+        <div class="flowItem">⚡ Comprobante</div>
+      </div>
 
       <div class="bullets">
         <div class="chip">💳 Tarjeta bancaria</div>
@@ -211,29 +313,81 @@
         <div class="chip">✅ Cobro directo en tu Stripe</div>
       </div>
 
-      <div class="row">
-        <a class="cta" href="/start">Activar mi PayLink</a>
-        <a class="ghost" href="{{ demo_url }}">Ver una demo</a>
+      <!-- NEW: Compatible + Sin efectivo -->
+      <div class="compat">
+        <div class="pill">📱 Compatible iPhone</div>
+        <div class="pill">🤖 Compatible Android</div>
+        <div class="pill">🚫 Sin efectivo · sin transferencias</div>
+      </div>
+
+      <div class="row" style="margin-top:14px;">
+        <a class="cta" href="{{ demo_url }}">🔥 Probar demo Carlos</a>
+        <a class="ghost" href="/start">Activar mi PayLink</a>
       </div>
 
       <div class="price">
         19 USD/mes <span>· precio de lanzamiento · suscripción</span>
       </div>
 
+      <div class="grid">
+        <div class="box">
+          <div class="k">💰 Señas / anticipos</div>
+          <b>Cobrá una seña en segundos</b><br/>
+          Ideal para reservas, diagnósticos, trabajos a domicilio o pedidos.
+        </div>
+        <div class="box">
+          <div class="k">⚡ Urgencias</div>
+          <b>Cobro express sin efectivo</b><br/>
+          El cliente paga con tarjeta y vos empezás el trabajo de inmediato.
+        </div>
+        <div class="box">
+          <div class="k">📍 Cobro a distancia</div>
+          <b>Cliente lejos, pago igual</b><br/>
+          Mandás el link por WhatsApp y cobrás sin moverte.
+        </div>
+        <div class="box">
+          <div class="k">🧾 Más profesional</div>
+          <b>Con comprobante automático</b><br/>
+          Pagos claros, registro simple, menos discusiones.
+        </div>
+      </div>
+
       <div class="section">
         <h2>¿Cómo funciona?</h2>
         <div class="steps">
-          <div class="step">1️⃣ Rellenas el formulario (tu negocio, tu WhatsApp y tus montos).</div>
-          <div class="step">2️⃣ Conectas tu cuenta Stripe (Stripe Connect). Tú eres el que cobra.</div>
-          <div class="step">3️⃣ Recibes tu página PayLink con botones de pago y botón WhatsApp listo.</div>
+          <div class="step"><b>1)</b> Rellenás el formulario (tu negocio, tu WhatsApp y tus montos).</div>
+          <div class="step"><b>2)</b> Conectás tu cuenta Stripe (Stripe Connect). <b>Vos sos el que cobra</b>.</div>
+          <div class="step"><b>3)</b> Recibís tu página PayLink con botón de pago + botón WhatsApp listo.</div>
+        </div>
+      </div>
+
+      <div class="section">
+        <h2>Preguntas frecuentes</h2>
+        <div class="faq">
+          <details>
+            <summary>¿Necesito una página web?</summary>
+            <p>No. PayLink te crea una página lista para cobrar. Solo compartís el link por WhatsApp.</p>
+          </details>
+          <details>
+            <summary>¿Cuándo recibo el dinero?</summary>
+            <p>El dinero se cobra en tu propia cuenta Stripe. El tiempo de acreditación depende de Stripe y tu banco.</p>
+          </details>
+          <details>
+            <summary>¿PayLink se queda con mi dinero?</summary>
+            <p>No. Con Stripe Connect activado, el cobro va directo a tu Stripe. Maavnica es el proveedor técnico.</p>
+          </details>
+          <details>
+            <summary>¿Puedo cobrar diferentes montos?</summary>
+            <p>Sí. Tenés montos rápidos (ej: 25/49/79) y también podés ingresar otro monto en segundos.</p>
+          </details>
         </div>
       </div>
 
       <div class="section">
         <h2>Información importante</h2>
         <div class="note">
-          Pagos procesados por Stripe. Stripe aplica sus comisiones según su tarifa.
-          Maavnica es un proveedor técnico (no es banco y no recibe los fondos del vendedor cuando Stripe Connect está activado).
+          <b>Pagos procesados por Stripe.</b> Stripe aplica sus comisiones según su tarifa.
+          <br/>Maavnica es un proveedor técnico (no es banco).
         </div>
       </div>
     </main>
