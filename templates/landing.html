@@ -313,7 +313,6 @@
         <div class="chip">✅ Cobro directo en tu Stripe</div>
       </div>
 
-      <!-- NEW: Compatible + Sin efectivo -->
       <div class="compat">
         <div class="pill">📱 Compatible iPhone</div>
         <div class="pill">🤖 Compatible Android</div>
@@ -321,7 +320,8 @@
       </div>
 
       <div class="row" style="margin-top:14px;">
-        <a class="cta" href="{{ demo_url }}">🔥 Probar demo Carlos</a>
+        <!-- FIX: lien relatif in-cassable -->
+        <a class="cta" id="demoBtn" href="/demo/carlos">🔥 Probar demo Carlos</a>
         <a class="ghost" href="/start">Activar mi PayLink</a>
       </div>
 
@@ -404,6 +404,17 @@
       </div>
     </footer>
   </div>
+
+  <!-- Fallback: si jamais un cache ou rendu bizarre, on force le lien -->
+  <script>
+    (function(){
+      var a = document.getElementById("demoBtn");
+      if (a && (!a.getAttribute("href") || a.getAttribute("href").indexOf("{{") === 0)) {
+        a.setAttribute("href", "/demo/carlos");
+      }
+    })();
+  </script>
 </body>
 </html>
+
 

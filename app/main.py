@@ -20,7 +20,9 @@ import stripe
 PROJECT_ROOT = os.path.dirname(os.path.dirname(__file__))  # .../paylink_connect
 DB_PATH = os.path.join(PROJECT_ROOT, "db", "paylink.db")
 
-BASE_URL = os.getenv("BASE_URL", "http://127.0.0.1:8000").rstrip("/")
+# ⚠️ If BASE_URL is not set on Render, old code falls back to localhost (bad for links).
+BASE_URL_ENV = os.getenv("BASE_URL", "").strip().rstrip("/")
+
 STRIPE_SECRET_KEY = os.getenv("STRIPE_SECRET_KEY", "").strip()
 STRIPE_CLIENT_ID = os.getenv("STRIPE_CLIENT_ID", "").strip()  # ca_...
 
@@ -31,6 +33,15 @@ if STRIPE_SECRET_KEY:
 def require_stripe_config():
     if not STRIPE_SECRET_KEY:
         raise HTTPException(status_code=500, detail="STRIPE_SECRET_KEY missing (env var)")
+
+
+def effective_base_url(request: Request) -> str:
+    """
+    Use BASE_URL if valid (not localhost). Otherwise derive from request (Render public URL).
+    """
+    if BASE_URL_ENV and "127.0.0.1" not in BASE_URL_ENV and "localhost" not in BASE_URL_ENV:
+        return BASE_URL_ENV
+    return str(request.base_url).rstrip("/")
 
 
 # ============================================================
@@ -88,7 +99,6 @@ def unique_slug(base: str) -> str:
 
 
 def normalize_whatsapp(raw: str) -> str:
-    # keep digits only for wa.me
     digits = re.sub(r"\D+", "", raw or "")
     return digits
 
@@ -123,7 +133,7 @@ def seed_demo_carlos() -> None:
             """,
             (
                 "carlos",
-                "Carlos Martinez · Reparación express de celulares",
+                "Carlos Martinez · Reparación express de teléfonos",
                 "Carlos",
                 "50588887777",  # Nicaragua fake
                 "NI",
@@ -161,19 +171,22 @@ def startup():
 
 @app.get("/", response_class=HTMLResponse)
 def landing(request: Request):
+    base_url = effective_base_url(request)
     return templates.TemplateResponse(
         "landing.html",
         {
             "request": request,
-            "base_url": BASE_URL,
-            "demo_url": f"{BASE_URL}/demo/carlos",
+            "base_url": base_url,
+            # keep variable for your current landing.html
+            "demo_url": f"{base_url}/demo/carlos",
         },
     )
 
 
 @app.get("/start", response_class=HTMLResponse)
 def start_form(request: Request):
-    return templates.TemplateResponse("start.html", {"request": request, "base_url": BASE_URL})
+    base_url = effective_base_url(request)
+    return templates.TemplateResponse("start.html", {"request": request, "base_url": base_url})
 
 
 @app.post("/start")
@@ -223,13 +236,14 @@ def connect_page(request: Request, merchant_id: int):
     if not m:
         raise HTTPException(404, "Merchant not found")
 
+    base_url = effective_base_url(request)
     return templates.TemplateResponse(
         "connect.html",
         {
             "request": request,
             "merchant": dict(m),
             "stripe_client_id": STRIPE_CLIENT_ID,
-            "base_url": BASE_URL,
+            "base_url": base_url,
         },
     )
 
@@ -248,8 +262,9 @@ def demo_carlos():
 # ============================================================
 
 @app.get("/stripe/connect/start")
-def stripe_connect_start(merchant_id: int):
+def stripe_connect_start(request: Request, merchant_id: int):
     require_stripe_config()
+    base_url = effective_base_url(request)
 
     m = get_merchant_by_id(merchant_id)
     if not m:
@@ -263,15 +278,15 @@ def stripe_connect_start(merchant_id: int):
             country=(m["country"] or None),
             business_profile={
                 "name": m["business_name"],
-                "url": f"{BASE_URL}/p/{m['slug']}",
+                "url": f"{base_url}/p/{m['slug']}",
             },
         )
         acct_id = acct["id"]
         with db() as conn:
             conn.execute("UPDATE merchants SET stripe_account_id=? WHERE id=?", (acct_id, merchant_id))
 
-    refresh_url = f"{BASE_URL}/connect/{merchant_id}?refresh=1"
-    return_url = f"{BASE_URL}/stripe/connect/return?merchant_id={merchant_id}"
+    refresh_url = f"{base_url}/connect/{merchant_id}?refresh=1"
+    return_url = f"{base_url}/stripe/connect/return?merchant_id={merchant_id}"
 
     link = stripe.AccountLink.create(
         account=acct_id,
@@ -285,6 +300,7 @@ def stripe_connect_start(merchant_id: int):
 @app.get("/stripe/connect/return", response_class=HTMLResponse)
 def stripe_connect_return(request: Request, merchant_id: int):
     require_stripe_config()
+    base_url = effective_base_url(request)
 
     m = get_merchant_by_id(merchant_id)
     if not m:
@@ -311,7 +327,7 @@ def stripe_connect_return(request: Request, merchant_id: int):
             "request": request,
             "merchant": dict(m2),
             "complete": complete,
-            "paypage_url": f"{BASE_URL}/p/{m2['slug']}",
+            "paypage_url": f"{base_url}/p/{m2['slug']}",
         },
     )
 
@@ -332,12 +348,13 @@ def pay_page(request: Request, slug: str, success: Optional[str] = None):
     wa_msg = f"Hola, quiero pagar por PayLink ({data.get('business_name','')}). ¿Qué monto me indicás?"
     whatsapp_url = f"https://wa.me/{wa}?text=" + quote_plus(wa_msg)
 
+    base_url = effective_base_url(request)
     return templates.TemplateResponse(
         "paypage.html",
         {
             "request": request,
             "merchant": data,
-            "base_url": BASE_URL,
+            "base_url": base_url,
             "whatsapp_url": whatsapp_url,
             "success": success,
         },
@@ -376,6 +393,7 @@ class CheckoutRequest(BaseModel):
 
 
 def create_session_for_merchant(
+    base_url: str,
     m: sqlite3.Row,
     amount_major: int,
     currency: str,
@@ -403,8 +421,8 @@ def create_session_for_merchant(
                 "quantity": 1,
             }
         ],
-        success_url=f"{BASE_URL}/p/{m['slug']}?success=1",
-        cancel_url=f"{BASE_URL}/p/{m['slug']}?success=0",
+        success_url=f"{base_url}/p/{m['slug']}?success=1",
+        cancel_url=f"{base_url}/p/{m['slug']}?success=0",
         stripe_account=acct_id,  # charge on connected account
     )
 
@@ -419,6 +437,7 @@ async def create_checkout_session(request: Request):
       { "url": "<stripe checkout url>" }
     """
     require_stripe_config()
+    base_url = effective_base_url(request)
 
     content_type = (request.headers.get("content-type") or "").lower()
 
@@ -427,6 +446,7 @@ async def create_checkout_session(request: Request):
             payload: Dict[str, Any] = await request.json()
         except Exception:
             raise HTTPException(400, "Invalid JSON body")
+
         data = CheckoutRequest(**payload)
         slug = data.slug.strip()
         amount = int(data.amount)
@@ -450,7 +470,7 @@ async def create_checkout_session(request: Request):
     if not m:
         raise HTTPException(404, "Merchant not found")
 
-    session = create_session_for_merchant(m, amount, currency, title, description)
+    session = create_session_for_merchant(base_url, m, amount, currency, title, description)
     return JSONResponse({"url": session["url"]})
 
 
