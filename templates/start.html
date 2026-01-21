@@ -1,29 +1,431 @@
 <!doctype html>
-<html lang="es"><head>
-<meta charset="utf-8"/>
-<meta name="viewport" content="width=device-width,initial-scale=1"/>
-<title>Crear mi PayLink</title>
-</head><body>
-<h2>Crear mi PayLink</h2>
-<form method="post" action="/start">
-<label>Nombre del negocio</label><br><input name="business_name" required><br>
-<label>Nombre de contacto</label><br><input name="contact_name"><br>
-<label>WhatsApp (con código país, solo números)</label><br><input name="whatsapp" required><br>
-<label>País (2 letras, ej: NI)</label><br><input name="country"><br>
-<label>Moneda (ej: USD)</label><br><input name="currency" value="USD"><br>
-<label>Monto 1</label><br><input name="amount1" type="number" value="10"><br>
-<label>Monto 2</label><br><input name="amount2" type="number" value="20"><br>
-<label>Monto 3</label><br><input name="amount3" type="number" value="50"><br>
-<button type="submit">Continuar → Conectar Stripe</button>
-<label>Nombre del negocio</label><br><input name="business_name" required><br>
-<label>Nombre de contacto</label><br><input name="contact_name"><br>
-<label>WhatsApp (con código país, solo números)</label><br><input name="whatsapp" required><br>
-<label>País (2 letras, ej: NI)</label><br><input name="country"><br>
-<label>Moneda (ej: USD)</label><br><input name="currency" value="USD"><br>
-<label>Monto 1</label><br><input name="amount1" type="number" value="10"><br>
-<label>Monto 2</label><br><input name="amount2" type="number" value="20"><br>
-<label>Monto 3</label><br><input name="amount3" type="number" value="50"><br>
-<button type="submit">Continuar → Conectar Stripe</button>
-</form>
-<p><a href="/">← Volver</a></p>
-</body></html>
+<html lang="es">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>PayLink — Crear mi página</title>
+  <style>
+    :root{
+      --bg:#070B14;
+      --card:rgba(255,255,255,.08);
+      --card2:rgba(255,255,255,.05);
+      --text:rgba(255,255,255,.92);
+      --muted:rgba(255,255,255,.70);
+      --line:rgba(255,255,255,.12);
+      --ok:#22c55e;
+      --blue:#2DB2FF;
+      --shadow:0 18px 55px rgba(0,0,0,.55);
+      --radius:22px;
+      --max:980px;
+    }
+    *{box-sizing:border-box}
+    body{
+      margin:0;
+      font-family: system-ui,-apple-system,Segoe UI,Roboto,Helvetica,Arial;
+      min-height:100vh;
+      color:var(--text);
+      background:
+        radial-gradient(900px 600px at 15% 15%, rgba(34,197,94,.18), transparent 60%),
+        radial-gradient(900px 600px at 85% 10%, rgba(45,178,255,.18), transparent 60%),
+        var(--bg);
+      display:flex;
+      align-items:center;
+      justify-content:center;
+      padding:24px;
+    }
+    .wrap{width:min(var(--max), 100%);}
+    .card{
+      background:linear-gradient(180deg,var(--card),var(--card2));
+      border:1px solid var(--line);
+      border-radius:var(--radius);
+      box-shadow:var(--shadow);
+      padding:22px;
+      overflow:hidden;
+    }
+
+    .top{
+      display:flex;
+      align-items:center;
+      justify-content:space-between;
+      gap:14px;
+      flex-wrap:wrap;
+      margin-bottom:14px;
+    }
+    .brand{
+      display:flex;
+      align-items:center;
+      gap:10px;
+      text-decoration:none;
+      color:inherit;
+    }
+    .logo{
+      width:40px;height:40px;border-radius:14px;
+      background:linear-gradient(135deg,rgba(34,197,94,.95),rgba(45,178,255,.75));
+      box-shadow:0 16px 40px rgba(34,197,94,.18);
+    }
+    .brand h1{
+      margin:0;
+      font-size:16px;
+      letter-spacing:.22em;
+      text-transform:uppercase;
+    }
+    .brand p{
+      margin:0;
+      color:var(--muted);
+      font-size:13px;
+    }
+
+    .hero{
+      margin-top:6px;
+      padding:16px;
+      border-radius:18px;
+      border:1px solid var(--line);
+      background:rgba(0,0,0,.22);
+    }
+    .hero h2{
+      margin:0 0 6px;
+      font-size:20px;
+      line-height:1.15;
+    }
+    .hero .sub{
+      margin:0;
+      color:var(--muted);
+      font-size:14px;
+      line-height:1.45;
+    }
+
+    .grid{
+      margin-top:14px;
+      display:grid;
+      grid-template-columns: 1.05fr .95fr;
+      gap:12px;
+    }
+    @media(max-width:900px){
+      .grid{grid-template-columns:1fr}
+    }
+
+    .box{
+      border:1px solid var(--line);
+      border-radius:18px;
+      padding:14px;
+      background:rgba(255,255,255,.03);
+    }
+    .box h3{
+      margin:0 0 10px;
+      font-size:14px;
+      color:rgba(255,255,255,.88);
+      letter-spacing:.2px;
+    }
+
+    form{margin:0}
+    .field{
+      display:grid;
+      gap:6px;
+      margin-bottom:12px;
+    }
+    label{
+      font-weight:900;
+      font-size:13px;
+      color:rgba(255,255,255,.86);
+    }
+    .hint{
+      font-size:12px;
+      color:var(--muted);
+      margin-top:-2px;
+      line-height:1.35;
+    }
+    input, select{
+      width:100%;
+      padding:12px 12px;
+      border-radius:14px;
+      border:1px solid var(--line);
+      background:rgba(0,0,0,.20);
+      color:var(--text);
+      outline:none;
+      font-size:14px;
+    }
+    input::placeholder{color:rgba(255,255,255,.45)}
+    input:focus, select:focus{
+      border-color:rgba(45,178,255,.45);
+      box-shadow:0 0 0 3px rgba(45,178,255,.15);
+    }
+
+    .two{
+      display:grid;
+      grid-template-columns:1fr 1fr;
+      gap:10px;
+    }
+    @media(max-width:520px){
+      .two{grid-template-columns:1fr}
+    }
+
+    .amounts{
+      display:grid;
+      grid-template-columns: 1fr 1fr 1fr;
+      gap:10px;
+    }
+    @media(max-width:700px){
+      .amounts{grid-template-columns:1fr}
+    }
+
+    .row{
+      display:flex;
+      flex-wrap:wrap;
+      gap:10px;
+      align-items:center;
+      margin-top:10px;
+    }
+    .btn{
+      display:inline-flex;
+      align-items:center;
+      justify-content:center;
+      gap:8px;
+      padding:12px 14px;
+      border-radius:16px;
+      text-decoration:none;
+      font-weight:900;
+      border:1px solid var(--line);
+      background:rgba(255,255,255,.03);
+      color:var(--text);
+      cursor:pointer;
+      white-space:nowrap;
+    }
+    .btnPrimary{
+      background:linear-gradient(135deg, rgba(34,197,94,.95), rgba(34,197,94,.55));
+      color:#06110a;
+      border:none;
+      box-shadow:0 18px 45px rgba(34,197,94,.18);
+    }
+    .btnBlue{
+      background:linear-gradient(135deg, rgba(45,178,255,.95), rgba(45,178,255,.55));
+      color:#061625;
+      border:none;
+      box-shadow:0 18px 45px rgba(45,178,255,.14);
+    }
+
+    .steps{
+      display:grid;
+      gap:10px;
+      margin-top:6px;
+    }
+    .step{
+      display:flex;
+      gap:10px;
+      align-items:flex-start;
+      padding:12px;
+      border-radius:16px;
+      border:1px solid var(--line);
+      background:rgba(255,255,255,.03);
+      color:var(--muted);
+      font-size:13px;
+      line-height:1.35;
+    }
+    .num{
+      width:28px;height:28px;border-radius:10px;
+      display:flex;align-items:center;justify-content:center;
+      font-weight:900;
+      background:rgba(45,178,255,.18);
+      border:1px solid var(--line);
+      color:#CFE6FF;
+      flex:0 0 auto;
+      user-select:none;
+    }
+    .step b{color:rgba(255,255,255,.90)}
+    .note{
+      margin-top:12px;
+      padding:12px 14px;
+      border-radius:16px;
+      border:1px solid rgba(45,178,255,.25);
+      background:rgba(45,178,255,.08);
+      color:rgba(255,255,255,.82);
+      font-size:13px;
+      line-height:1.4;
+    }
+
+    .foot{
+      margin-top:14px;
+      display:flex;
+      justify-content:space-between;
+      flex-wrap:wrap;
+      gap:10px;
+      color:var(--muted);
+      font-size:12px;
+    }
+    .foot a{
+      color:rgba(255,255,255,.78);
+      text-decoration:none;
+      border-bottom:1px dashed rgba(255,255,255,.25);
+    }
+    .foot a:hover{color:var(--text)}
+  </style>
+</head>
+
+<body>
+  <div class="wrap">
+    <div class="card">
+
+      <div class="top">
+        <a class="brand" href="/">
+          <div class="logo"></div>
+          <div>
+            <h1>MAAVNICA</h1>
+            <p>PayLink · Crear mi página</p>
+          </div>
+        </a>
+        <a class="btn btnBlue" href="/demo/carlos">🔥 Ver demo</a>
+      </div>
+
+      <div class="hero">
+        <h2>Creá tu PayLink en 2 minutos</h2>
+        <p class="sub">
+          Te generamos tu página para cobrar por WhatsApp.
+          Después conectás Stripe (oficial) y <b>cobrás directo en tu cuenta</b>.
+        </p>
+      </div>
+
+      <div class="grid">
+
+        <!-- FORM -->
+        <div class="box">
+          <h3>Datos del negocio</h3>
+
+          <form method="POST" action="/start" id="startForm" autocomplete="on">
+            <div class="field">
+              <label for="business_name">Nombre del negocio *</label>
+              <div class="hint">Ej: “Reparación Express Carlos”</div>
+              <input id="business_name" name="business_name" required placeholder="Tu negocio" />
+            </div>
+
+            <div class="field">
+              <label for="contact_name">Nombre (opcional)</label>
+              <div class="hint">Para personalizar tu página (ej: Carlos).</div>
+              <input id="contact_name" name="contact_name" placeholder="Tu nombre" />
+            </div>
+
+            <div class="field">
+              <label for="whatsapp">WhatsApp *</label>
+              <div class="hint">Formato recomendado: código país + número. Ej: 50588887777</div>
+              <input id="whatsapp" name="whatsapp" required inputmode="numeric" placeholder="50588887777" />
+            </div>
+
+            <div class="two">
+              <div class="field">
+                <label for="country">País</label>
+                <div class="hint">Por defecto Nicaragua.</div>
+                <select id="country" name="country">
+                  <option value="NI" selected>Nicaragua (NI)</option>
+                  <option value="CR">Costa Rica (CR)</option>
+                  <option value="PA">Panamá (PA)</option>
+                  <option value="GT">Guatemala (GT)</option>
+                  <option value="SV">El Salvador (SV)</option>
+                  <option value="HN">Honduras (HN)</option>
+                </select>
+              </div>
+
+              <div class="field">
+                <label for="currency">Moneda</label>
+                <div class="hint">Por defecto USD.</div>
+                <select id="currency" name="currency">
+                  <option value="USD" selected>USD</option>
+                  <option value="NIO">NIO</option>
+                  <option value="CRC">CRC</option>
+                </select>
+              </div>
+            </div>
+
+            <h3 style="margin-top:14px;">Montos rápidos (botones)</h3>
+            <div class="hint" style="margin-bottom:10px;">
+              Estos montos aparecen como botones para cobrar rápido (seña / servicio / urgencia).
+            </div>
+
+            <div class="amounts">
+              <div class="field">
+                <label for="amount1">Monto 1</label>
+                <input id="amount1" name="amount1" type="number" min="1" value="25" />
+              </div>
+              <div class="field">
+                <label for="amount2">Monto 2</label>
+                <input id="amount2" name="amount2" type="number" min="1" value="49" />
+              </div>
+              <div class="field">
+                <label for="amount3">Monto 3</label>
+                <input id="amount3" name="amount3" type="number" min="1" value="79" />
+              </div>
+            </div>
+
+            <div class="row">
+              <button class="btn btnPrimary" type="submit" id="submitBtn">
+                ✅ Crear mi PayLink
+              </button>
+              <a class="btn" href="/">Cancelar</a>
+            </div>
+
+            <div class="note" id="sendingNote" style="display:none;">
+              ⏳ Creando tu página… en unos segundos te llevamos a “Conectar Stripe”.
+            </div>
+          </form>
+        </div>
+
+        <!-- EXPLAIN -->
+        <div class="box">
+          <h3>¿Qué pasa después?</h3>
+
+          <div class="steps">
+            <div class="step">
+              <div class="num">1</div>
+              <div>
+                <b>Te creamos tu página PayLink</b><br/>
+                <span class="muted">Con botón WhatsApp + botón de pago.</span>
+              </div>
+            </div>
+            <div class="step">
+              <div class="num">2</div>
+              <div>
+                <b>Conectás Stripe (oficial)</b><br/>
+                <span class="muted">Necesario para cobrar con tarjeta.</span>
+              </div>
+            </div>
+            <div class="step">
+              <div class="num">3</div>
+              <div>
+                <b>Listo: cobrás por WhatsApp</b><br/>
+                <span class="muted">El dinero va directo a tu Stripe.</span>
+              </div>
+            </div>
+          </div>
+
+          <div class="note">
+            🔐 Pagos procesados por Stripe. Maavnica es proveedor técnico (no es banco).
+            <br/>💡 Si ya tenés Stripe, el onboarding es muy rápido.
+          </div>
+        </div>
+
+      </div>
+
+      <div class="foot">
+        <div>© 2026 Maavnica · PayLink</div>
+        <div>
+          <a href="/mentions-legales" target="_blank">Aviso legal</a> ·
+          <a href="/cgv-paylink" target="_blank">Condiciones</a>
+        </div>
+      </div>
+
+    </div>
+  </div>
+
+  <script>
+    (function(){
+      const form = document.getElementById("startForm");
+      const btn = document.getElementById("submitBtn");
+      const note = document.getElementById("sendingNote");
+
+      form.addEventListener("submit", function(){
+        btn.disabled = true;
+        btn.textContent = "⏳ Creando…";
+        note.style.display = "block";
+      });
+    })();
+  </script>
+</body>
+</html>
+
