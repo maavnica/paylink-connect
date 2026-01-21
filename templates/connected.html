@@ -1,12 +1,303 @@
-<!doctype html><html lang="es"><head><meta charset="utf-8"/><meta name="viewport" content="width=device-width,initial-scale=1"/>
-<title>Stripe conectado</title></head><body>
-<h2>Stripe conectado</h2>
-<p><b>{{ merchant.business_name }}</b></p>
-{% if complete %}
-<p>✅ Listo para cobrar.</p>
-{% else %}
-<p>⚠️ Revisa Stripe para completar verificación si es necesario.</p>
-{% endif %}
-<p><a href="{{ paypage_url }}">Abrir mi página PayLink</a></p>
-<p><a href="/">← Volver</a></p>
-</body></html>
+<!doctype html>
+<html lang="es">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>PayLink — Stripe conectado</title>
+  <style>
+    :root{
+      --bg:#070B14;
+      --card:rgba(255,255,255,.08);
+      --card2:rgba(255,255,255,.05);
+      --text:rgba(255,255,255,.92);
+      --muted:rgba(255,255,255,.70);
+      --line:rgba(255,255,255,.12);
+      --ok:#22c55e;
+      --warn:#f59e0b;
+      --blue:#2DB2FF;
+      --shadow:0 18px 55px rgba(0,0,0,.55);
+      --radius:22px;
+      --max:980px;
+    }
+    *{box-sizing:border-box}
+    body{
+      margin:0;
+      font-family: system-ui,-apple-system,Segoe UI,Roboto,Helvetica,Arial;
+      min-height:100vh;
+      color:var(--text);
+      background:
+        radial-gradient(900px 600px at 15% 15%, rgba(34,197,94,.18), transparent 60%),
+        radial-gradient(900px 600px at 85% 10%, rgba(45,178,255,.18), transparent 60%),
+        var(--bg);
+      display:flex;
+      align-items:center;
+      justify-content:center;
+      padding:24px;
+    }
+    .wrap{
+      width:min(var(--max), 100%);
+    }
+    .card{
+      background:linear-gradient(180deg,var(--card),var(--card2));
+      border:1px solid var(--line);
+      border-radius:var(--radius);
+      box-shadow:var(--shadow);
+      padding:22px;
+      overflow:hidden;
+    }
+    .top{
+      display:flex;
+      align-items:center;
+      justify-content:space-between;
+      gap:14px;
+      flex-wrap:wrap;
+      margin-bottom:14px;
+    }
+    .brand{
+      display:flex;
+      align-items:center;
+      gap:10px;
+    }
+    .logo{
+      width:40px;height:40px;border-radius:14px;
+      background:linear-gradient(135deg,rgba(34,197,94,.95),rgba(45,178,255,.75));
+      box-shadow:0 16px 40px rgba(34,197,94,.18);
+    }
+    .brand h1{
+      margin:0;
+      font-size:16px;
+      letter-spacing:.22em;
+      text-transform:uppercase;
+    }
+    .brand p{
+      margin:0;
+      color:var(--muted);
+      font-size:13px;
+    }
+
+    .status{
+      display:inline-flex;
+      align-items:center;
+      gap:8px;
+      padding:9px 12px;
+      border-radius:999px;
+      border:1px solid var(--line);
+      background:rgba(255,255,255,.03);
+      font-weight:900;
+      font-size:13px;
+      white-space:nowrap;
+    }
+    .status.ok{ border-color:rgba(34,197,94,.35); }
+    .status.warn{ border-color:rgba(245,158,11,.35); }
+
+    .hero{
+      margin-top:6px;
+      padding:16px;
+      border-radius:18px;
+      border:1px solid var(--line);
+      background:rgba(0,0,0,.22);
+    }
+    .hero h2{
+      margin:0 0 6px;
+      font-size:20px;
+      line-height:1.15;
+    }
+    .hero .sub{
+      margin:0;
+      color:var(--muted);
+      font-size:14px;
+      line-height:1.45;
+    }
+
+    .grid{
+      margin-top:14px;
+      display:grid;
+      grid-template-columns: 1.1fr .9fr;
+      gap:12px;
+    }
+    @media(max-width:900px){
+      .grid{grid-template-columns:1fr}
+    }
+
+    .box{
+      border:1px solid var(--line);
+      border-radius:18px;
+      padding:14px;
+      background:rgba(255,255,255,.03);
+    }
+    .box h3{
+      margin:0 0 8px;
+      font-size:14px;
+      color:rgba(255,255,255,.88);
+      letter-spacing:.2px;
+    }
+    .row{
+      display:flex;
+      flex-wrap:wrap;
+      gap:10px;
+      margin-top:10px;
+    }
+    .btn{
+      display:inline-flex;
+      align-items:center;
+      justify-content:center;
+      gap:8px;
+      padding:12px 14px;
+      border-radius:16px;
+      text-decoration:none;
+      font-weight:900;
+      border:1px solid var(--line);
+      background:rgba(255,255,255,.03);
+      color:var(--text);
+      cursor:pointer;
+    }
+    .btnPrimary{
+      background:linear-gradient(135deg, rgba(34,197,94,.95), rgba(34,197,94,.55));
+      color:#06110a;
+      border:none;
+      box-shadow:0 18px 45px rgba(34,197,94,.18);
+    }
+    .btnBlue{
+      background:linear-gradient(135deg, rgba(45,178,255,.95), rgba(45,178,255,.55));
+      color:#061625;
+      border:none;
+      box-shadow:0 18px 45px rgba(45,178,255,.14);
+    }
+
+    .kpi{
+      display:grid;
+      gap:8px;
+      margin-top:8px;
+      color:var(--muted);
+      font-size:13px;
+      line-height:1.35;
+    }
+    .kpi b{ color:rgba(255,255,255,.90); }
+
+    .note{
+      margin-top:14px;
+      padding:12px 14px;
+      border-radius:16px;
+      border:1px solid rgba(45,178,255,.25);
+      background:rgba(45,178,255,.08);
+      color:rgba(255,255,255,.82);
+      font-size:13px;
+      line-height:1.4;
+    }
+
+    .foot{
+      margin-top:14px;
+      display:flex;
+      justify-content:space-between;
+      flex-wrap:wrap;
+      gap:10px;
+      color:var(--muted);
+      font-size:12px;
+    }
+    .foot a{
+      color:rgba(255,255,255,.78);
+      text-decoration:none;
+      border-bottom:1px dashed rgba(255,255,255,.25);
+    }
+    .foot a:hover{color:var(--text)}
+  </style>
+</head>
+
+<body>
+  <div class="wrap">
+    <div class="card">
+
+      <div class="top">
+        <div class="brand">
+          <div class="logo"></div>
+          <div>
+            <h1>MAAVNICA</h1>
+            <p>PayLink · Stripe Connect</p>
+          </div>
+        </div>
+
+        {% if complete %}
+          <div class="status ok">✅ Stripe conectado</div>
+        {% else %}
+          <div class="status warn">⚠️ Conexión incompleta</div>
+        {% endif %}
+      </div>
+
+      <div class="hero">
+        <h2>
+          {% if merchant and merchant.business_name %}
+            {{ merchant.business_name }}
+          {% else %}
+            Tu PayLink está casi listo
+          {% endif %}
+        </h2>
+
+        <p class="sub">
+          {% if complete %}
+            Ya podés cobrar con tarjeta desde WhatsApp. Tu página PayLink está activa y lista para compartir.
+          {% else %}
+            Falta terminar el onboarding de Stripe para poder cobrar. Es normal: solo completá los últimos pasos.
+          {% endif %}
+        </p>
+      </div>
+
+      <div class="grid">
+        <div class="box">
+          <h3>Tu link PayLink</h3>
+          <div class="kpi">
+            <div>🔗 <b>Página:</b> {{ paypage_url }}</div>
+            <div>💬 <b>Uso:</b> mandás el link por WhatsApp y el cliente paga al instante.</div>
+            <div>⚡ <b>Comprobante:</b> automático.</div>
+          </div>
+
+          <div class="row">
+            <a class="btn btnPrimary" href="{{ paypage_url }}" target="_blank" rel="noopener">
+              🚀 Ver mi página PayLink
+            </a>
+            <a class="btn btnBlue" href="/" >
+              🏠 Volver a la landing
+            </a>
+          </div>
+        </div>
+
+        <div class="box">
+          <h3>Estado de Stripe</h3>
+
+          {% if complete %}
+            <div class="kpi">
+              <div>✅ <b>Pagos habilitados</b></div>
+              <div>✅ <b>Retiros habilitados</b></div>
+              <div>🎉 Ya podés empezar a cobrar.</div>
+            </div>
+          {% else %}
+            <div class="kpi">
+              <div>⚠️ <b>Stripe aún no está listo</b></div>
+              <div>➡️ Terminá el onboarding para activar cobros.</div>
+              <div>💡 Tip: completá datos bancarios e identidad.</div>
+            </div>
+
+            <div class="row">
+              <a class="btn btnPrimary" href="/stripe/connect/start?merchant_id={{ merchant.id }}">
+                🔁 Continuar onboarding Stripe
+              </a>
+            </div>
+          {% endif %}
+
+          <div class="note">
+            🔐 Los pagos se procesan con Stripe. Maavnica es el proveedor técnico (no es banco).
+          </div>
+        </div>
+      </div>
+
+      <div class="foot">
+        <div>© {{ (merchant.created_at or "")[:4] if merchant and merchant.created_at else "2026" }} Maavnica · PayLink</div>
+        <div>
+          <a href="/mentions-legales" target="_blank">Aviso legal</a> ·
+          <a href="/cgv-paylink" target="_blank">Condiciones</a>
+        </div>
+      </div>
+
+    </div>
+  </div>
+</body>
+</html>

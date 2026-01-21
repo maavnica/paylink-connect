@@ -1,9 +1,351 @@
-<!doctype html><html lang="es"><head><meta charset="utf-8"/><meta name="viewport" content="width=device-width,initial-scale=1"/>
-<title>Conectar Stripe</title></head><body>
-<h2>Conectar Stripe</h2>
-<p><b>{{ merchant.business_name }}</b> — WhatsApp: {{ merchant.whatsapp }}</p>
-<p>Para que el dinero vaya directo a ti, conecta tu cuenta Stripe.</p>
-<p><a href="/stripe/connect/start?merchant_id={{ merchant.id }}">✅ Conectar mi Stripe</a></p>
-<p><small>Stripe puede pedir verificación (KYC) según el país.</small></p>
-<p><a href="/">← Volver</a></p>
-</body></html>
+<!doctype html>
+<html lang="es">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>PayLink — Conectar Stripe</title>
+  <style>
+    :root{
+      --bg:#070B14;
+      --card:rgba(255,255,255,.08);
+      --card2:rgba(255,255,255,.05);
+      --text:rgba(255,255,255,.92);
+      --muted:rgba(255,255,255,.70);
+      --line:rgba(255,255,255,.12);
+      --ok:#22c55e;
+      --warn:#f59e0b;
+      --blue:#2DB2FF;
+      --shadow:0 18px 55px rgba(0,0,0,.55);
+      --radius:22px;
+      --max:980px;
+    }
+    *{box-sizing:border-box}
+    body{
+      margin:0;
+      font-family: system-ui,-apple-system,Segoe UI,Roboto,Helvetica,Arial;
+      min-height:100vh;
+      color:var(--text);
+      background:
+        radial-gradient(900px 600px at 15% 15%, rgba(34,197,94,.18), transparent 60%),
+        radial-gradient(900px 600px at 85% 10%, rgba(45,178,255,.18), transparent 60%),
+        var(--bg);
+      display:flex;
+      align-items:center;
+      justify-content:center;
+      padding:24px;
+    }
+    .wrap{width:min(var(--max), 100%);}
+    .card{
+      background:linear-gradient(180deg,var(--card),var(--card2));
+      border:1px solid var(--line);
+      border-radius:var(--radius);
+      box-shadow:var(--shadow);
+      padding:22px;
+      overflow:hidden;
+    }
+    .top{
+      display:flex;
+      align-items:center;
+      justify-content:space-between;
+      gap:14px;
+      flex-wrap:wrap;
+      margin-bottom:14px;
+    }
+    .brand{
+      display:flex;
+      align-items:center;
+      gap:10px;
+      text-decoration:none;
+      color:inherit;
+    }
+    .logo{
+      width:40px;height:40px;border-radius:14px;
+      background:linear-gradient(135deg,rgba(34,197,94,.95),rgba(45,178,255,.75));
+      box-shadow:0 16px 40px rgba(34,197,94,.18);
+    }
+    .brand h1{
+      margin:0;
+      font-size:16px;
+      letter-spacing:.22em;
+      text-transform:uppercase;
+    }
+    .brand p{
+      margin:0;
+      color:var(--muted);
+      font-size:13px;
+    }
+
+    .status{
+      display:inline-flex;
+      align-items:center;
+      gap:8px;
+      padding:9px 12px;
+      border-radius:999px;
+      border:1px solid var(--line);
+      background:rgba(255,255,255,.03);
+      font-weight:900;
+      font-size:13px;
+      white-space:nowrap;
+    }
+    .status.ok{ border-color:rgba(34,197,94,.35); }
+    .status.warn{ border-color:rgba(245,158,11,.35); }
+
+    .hero{
+      margin-top:6px;
+      padding:16px;
+      border-radius:18px;
+      border:1px solid var(--line);
+      background:rgba(0,0,0,.22);
+    }
+    .hero h2{
+      margin:0 0 6px;
+      font-size:20px;
+      line-height:1.15;
+    }
+    .hero .sub{
+      margin:0;
+      color:var(--muted);
+      font-size:14px;
+      line-height:1.45;
+    }
+
+    .grid{
+      margin-top:14px;
+      display:grid;
+      grid-template-columns: 1.05fr .95fr;
+      gap:12px;
+    }
+    @media(max-width:900px){
+      .grid{grid-template-columns:1fr}
+    }
+
+    .box{
+      border:1px solid var(--line);
+      border-radius:18px;
+      padding:14px;
+      background:rgba(255,255,255,.03);
+    }
+    .box h3{
+      margin:0 0 8px;
+      font-size:14px;
+      color:rgba(255,255,255,.88);
+      letter-spacing:.2px;
+    }
+
+    .kpi{
+      display:grid;
+      gap:8px;
+      margin-top:8px;
+      color:var(--muted);
+      font-size:13px;
+      line-height:1.35;
+    }
+    .kpi b{ color:rgba(255,255,255,.90); }
+
+    .row{
+      display:flex;
+      flex-wrap:wrap;
+      gap:10px;
+      margin-top:12px;
+      align-items:center;
+    }
+    .btn{
+      display:inline-flex;
+      align-items:center;
+      justify-content:center;
+      gap:8px;
+      padding:12px 14px;
+      border-radius:16px;
+      text-decoration:none;
+      font-weight:900;
+      border:1px solid var(--line);
+      background:rgba(255,255,255,.03);
+      color:var(--text);
+      cursor:pointer;
+      white-space:nowrap;
+    }
+    .btnPrimary{
+      background:linear-gradient(135deg, rgba(34,197,94,.95), rgba(34,197,94,.55));
+      color:#06110a;
+      border:none;
+      box-shadow:0 18px 45px rgba(34,197,94,.18);
+    }
+    .btnBlue{
+      background:linear-gradient(135deg, rgba(45,178,255,.95), rgba(45,178,255,.55));
+      color:#061625;
+      border:none;
+      box-shadow:0 18px 45px rgba(45,178,255,.14);
+    }
+
+    .pill{
+      display:inline-flex;
+      align-items:center;
+      gap:8px;
+      padding:8px 10px;
+      border-radius:999px;
+      border:1px solid rgba(255,255,255,.14);
+      background:rgba(0,0,0,.18);
+      color:rgba(255,255,255,.82);
+      font-weight:900;
+      font-size:12px;
+      white-space:nowrap;
+      margin-top:10px;
+    }
+
+    .steps{
+      display:grid;
+      gap:10px;
+      margin-top:8px;
+    }
+    .step{
+      display:flex;
+      gap:10px;
+      align-items:flex-start;
+      padding:12px;
+      border-radius:16px;
+      border:1px solid var(--line);
+      background:rgba(255,255,255,.03);
+    }
+    .num{
+      width:28px;height:28px;border-radius:10px;
+      display:flex;align-items:center;justify-content:center;
+      font-weight:900;
+      background:rgba(45,178,255,.18);
+      border:1px solid var(--line);
+      color:#CFE6FF;
+      flex:0 0 auto;
+      user-select:none;
+    }
+    .muted{color:var(--muted); font-size:13px; line-height:1.35}
+    .note{
+      margin-top:12px;
+      padding:12px 14px;
+      border-radius:16px;
+      border:1px solid rgba(45,178,255,.25);
+      background:rgba(45,178,255,.08);
+      color:rgba(255,255,255,.82);
+      font-size:13px;
+      line-height:1.4;
+    }
+
+    .foot{
+      margin-top:14px;
+      display:flex;
+      justify-content:space-between;
+      flex-wrap:wrap;
+      gap:10px;
+      color:var(--muted);
+      font-size:12px;
+    }
+    .foot a{
+      color:rgba(255,255,255,.78);
+      text-decoration:none;
+      border-bottom:1px dashed rgba(255,255,255,.25);
+    }
+    .foot a:hover{color:var(--text)}
+  </style>
+</head>
+
+<body>
+  <div class="wrap">
+    <div class="card">
+
+      <div class="top">
+        <a class="brand" href="/">
+          <div class="logo"></div>
+          <div>
+            <h1>MAAVNICA</h1>
+            <p>PayLink · Stripe Connect</p>
+          </div>
+        </a>
+
+        {% if merchant and merchant.stripe_onboarding_complete %}
+          <div class="status ok">✅ Stripe listo</div>
+        {% else %}
+          <div class="status warn">⚠️ Falta conectar Stripe</div>
+        {% endif %}
+      </div>
+
+      <div class="hero">
+        <h2>Último paso: conectar Stripe</h2>
+        <p class="sub">
+          Para poder cobrar con tarjeta, necesitás conectar tu cuenta Stripe.
+          <br/>Lo bueno: <b>vos cobrás directo en tu Stripe</b> (Maavnica no retiene tu dinero).
+        </p>
+        <div class="pill">🔐 Seguro · 💳 Tarjeta · ⚡ Comprobante automático</div>
+      </div>
+
+      <div class="grid">
+        <div class="box">
+          <h3>Tu información</h3>
+          <div class="kpi">
+            <div>🏪 <b>Negocio:</b> {{ merchant.business_name }}</div>
+            <div>👤 <b>Contacto:</b> {{ merchant.contact_name or "—" }}</div>
+            <div>💬 <b>WhatsApp:</b> {{ merchant.whatsapp }}</div>
+            <div>💵 <b>Moneda:</b> {{ merchant.currency }}</div>
+            <div>⚡ <b>Montos rápidos:</b> {{ merchant.amount1 }} / {{ merchant.amount2 }} / {{ merchant.amount3 }}</div>
+            <div>🔗 <b>Tu página:</b> <a href="/p/{{ merchant.slug }}" target="_blank" rel="noopener">/p/{{ merchant.slug }}</a></div>
+          </div>
+
+          <div class="row">
+            <a class="btn btnBlue" href="/p/{{ merchant.slug }}" target="_blank" rel="noopener">
+              👀 Ver mi página PayLink
+            </a>
+            <a class="btn" href="/">
+              🏠 Volver
+            </a>
+          </div>
+        </div>
+
+        <div class="box">
+          <h3>Conectar Stripe (2 minutos)</h3>
+
+          <div class="steps">
+            <div class="step">
+              <div class="num">1</div>
+              <div>
+                <b>Hacé click en “Conectar Stripe”</b>
+                <div class="muted">Se abre Stripe Connect (oficial) para completar tus datos.</div>
+              </div>
+            </div>
+            <div class="step">
+              <div class="num">2</div>
+              <div>
+                <b>Agregá cuenta bancaria</b>
+                <div class="muted">Así Stripe puede enviarte los pagos.</div>
+              </div>
+            </div>
+            <div class="step">
+              <div class="num">3</div>
+              <div>
+                <b>Listo: empezás a cobrar</b>
+                <div class="muted">Tu página PayLink queda activa y lista para WhatsApp.</div>
+              </div>
+            </div>
+          </div>
+
+          <div class="row">
+            <a class="btn btnPrimary" href="/stripe/connect/start?merchant_id={{ merchant.id }}">
+              🔗 Conectar Stripe ahora
+            </a>
+          </div>
+
+          <div class="note">
+            💡 Si ya tenés Stripe, podés iniciar sesión y conectar en segundos.
+            <br/>Maavnica es proveedor técnico (no es banco).
+          </div>
+        </div>
+      </div>
+
+      <div class="foot">
+        <div>© 2026 Maavnica · PayLink</div>
+        <div>
+          <a href="/mentions-legales" target="_blank">Aviso legal</a> ·
+          <a href="/cgv-paylink" target="_blank">Condiciones</a>
+        </div>
+      </div>
+
+    </div>
+  </div>
+</body>
+</html>
