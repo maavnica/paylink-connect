@@ -127,6 +127,27 @@
       white-space:nowrap;
     }
 
+    .compat{
+      margin-top:12px;
+      display:flex;
+      flex-wrap:wrap;
+      gap:10px;
+      align-items:center;
+    }
+    .compat .pill{
+      display:inline-flex;
+      align-items:center;
+      gap:8px;
+      padding:8px 12px;
+      border-radius:999px;
+      border:1px solid rgba(255,255,255,.14);
+      background:rgba(0,0,0,.18);
+      color:rgba(255,255,255,.82);
+      font-weight:900;
+      font-size:.9rem;
+      white-space:nowrap;
+    }
+
     .row{display:flex;gap:12px;flex-wrap:wrap;align-items:center;margin-top:10px}
     .cta{
       display:inline-flex;
@@ -195,27 +216,6 @@
       font-size:.86rem;
       font-weight:900;
       margin-bottom:8px;
-    }
-
-    .compat{
-      margin-top:12px;
-      display:flex;
-      flex-wrap:wrap;
-      gap:10px;
-      align-items:center;
-    }
-    .compat .pill{
-      display:inline-flex;
-      align-items:center;
-      gap:8px;
-      padding:8px 12px;
-      border-radius:999px;
-      border:1px solid rgba(255,255,255,.14);
-      background:rgba(0,0,0,.18);
-      color:rgba(255,255,255,.82);
-      font-weight:900;
-      font-size:.9rem;
-      white-space:nowrap;
     }
 
     .section{margin-top:26px;}
@@ -296,6 +296,7 @@
 
       <p class="lead">
         PayLink es una <b>página de pago simple, segura y reutilizable</b> para profesionales que trabajan por WhatsApp.
+        <br/>También funciona perfecto por <b>SMS</b> o <b>email</b> (mandás el link y listo).
         <br/>Lo más importante: <b>cobrás directamente en tu propia cuenta Stripe</b> gracias a <b>Stripe Connect</b>.
       </p>
 
@@ -309,6 +310,7 @@
       <div class="bullets">
         <div class="chip">💳 Tarjeta bancaria</div>
         <div class="chip">📲 Apple Pay / Google Pay</div>
+        <div class="chip">🌍 Tarjetas locales e internacionales</div>
         <div class="chip">🔐 Pago seguro (Stripe)</div>
         <div class="chip">✅ Cobro directo en tu Stripe</div>
       </div>
@@ -319,7 +321,6 @@
         <div class="pill">🚫 Sin efectivo · sin transferencias</div>
       </div>
 
-      <!-- IMPORTANT: do NOT use broken Jinja/JS here. Use safe relative links -->
       <div class="row" style="margin-top:14px;">
         <a class="cta" href="/demo/carlos">🔥 Probar demo Carlos</a>
         <a class="ghost" href="/start">Activar mi PayLink</a>
@@ -343,7 +344,7 @@
         <div class="box">
           <div class="k">📍 Cobro a distancia</div>
           <b>Cliente lejos, pago igual</b><br/>
-          Mandás el link por WhatsApp y cobrás sin moverte.
+          Mandás el link por WhatsApp, SMS o email y cobrás sin moverte.
         </div>
         <div class="box">
           <div class="k">🧾 Más profesional</div>
@@ -357,7 +358,7 @@
         <div class="steps">
           <div class="step"><b>1)</b> Rellenás el formulario (tu negocio, tu WhatsApp y tus montos).</div>
           <div class="step"><b>2)</b> Conectás tu cuenta Stripe (Stripe Connect). <b>Vos sos el que cobra</b>.</div>
-          <div class="step"><b>3)</b> Recibís tu página PayLink con botón de pago + botón WhatsApp listo.</div>
+          <div class="step"><b>3)</b> Recibís tu página PayLink con botón de pago + botón WhatsApp (y link reutilizable para SMS/email).</div>
         </div>
       </div>
 
@@ -366,7 +367,7 @@
         <div class="faq">
           <details>
             <summary>¿Necesito una página web?</summary>
-            <p>No. PayLink te crea una página lista para cobrar. Solo compartís el link por WhatsApp.</p>
+            <p>No. PayLink te crea una página lista para cobrar. Solo compartís el link por WhatsApp, SMS o email.</p>
           </details>
           <details>
             <summary>¿Cuándo recibo el dinero?</summary>
@@ -378,7 +379,7 @@
           </details>
           <details>
             <summary>¿Puedo cobrar diferentes montos?</summary>
-            <p>Sí. Tenés montos rápidos (ej: 25/49/79) y también podés ingresar otro monto en segundos.</p>
+            <p>Sí. Tenés montos rápidos y también podés ingresar otro monto en segundos en tu página PayLink.</p>
           </details>
         </div>
       </div>
@@ -406,5 +407,6 @@
   </div>
 </body>
 </html>
+
 
 
