@@ -20,11 +20,21 @@ import stripe
 PROJECT_ROOT = os.path.dirname(os.path.dirname(__file__))  # .../paylink_connect
 DB_PATH = os.path.join(PROJECT_ROOT, "db", "paylink.db")
 
-# ⚠️ If BASE_URL is not set on Render, old code falls back to localhost (bad for links).
-BASE_URL_ENV = os.getenv("BASE_URL", "").strip().rstrip("/")
+BASE_URL = os.getenv("BASE_URL", "http://127.0.0.1:8000").rstrip("/")
 
 STRIPE_SECRET_KEY = os.getenv("STRIPE_SECRET_KEY", "").strip()
-STRIPE_CLIENT_ID = os.getenv("STRIPE_CLIENT_ID", "").strip()  # ca_...
+STRIPE_WEBHOOK_SECRET = os.getenv("STRIPE_WEBHOOK_SECRET", "").strip()  # optional
+
+# Use your Render env vars (you already added them)
+STRIPE_CONNECT_RETURN_URL = os.getenv(
+    "STRIPE_CONNECT_RETURN_URL",
+    f"{BASE_URL}/stripe/connect/return"
+).rstrip("/")
+
+STRIPE_CONNECT_REFRESH_URL = os.getenv(
+    "STRIPE_CONNECT_REFRESH_URL",
+    f"{BASE_URL}/stripe/connect/refresh"
+).rstrip("/")
 
 if STRIPE_SECRET_KEY:
     stripe.api_key = STRIPE_SECRET_KEY
@@ -33,15 +43,6 @@ if STRIPE_SECRET_KEY:
 def require_stripe_config():
     if not STRIPE_SECRET_KEY:
         raise HTTPException(status_code=500, detail="STRIPE_SECRET_KEY missing (env var)")
-
-
-def effective_base_url(request: Request) -> str:
-    """
-    Use BASE_URL if valid (not localhost). Otherwise derive from request (Render public URL).
-    """
-    if BASE_URL_ENV and "127.0.0.1" not in BASE_URL_ENV and "localhost" not in BASE_URL_ENV:
-        return BASE_URL_ENV
-    return str(request.base_url).rstrip("/")
 
 
 # ============================================================
@@ -114,11 +115,6 @@ def get_merchant_by_slug(slug: str):
 
 
 def seed_demo_carlos() -> None:
-    """
-    Creates demo record:
-      - /p/carlos
-      - /demo/carlos (redirect)
-    """
     with db() as conn:
         exists = conn.execute("SELECT 1 FROM merchants WHERE slug='carlos'").fetchone()
         if exists:
@@ -135,7 +131,7 @@ def seed_demo_carlos() -> None:
                 "carlos",
                 "Carlos Martinez · Reparación express de teléfonos",
                 "Carlos",
-                "50588887777",  # Nicaragua fake
+                "50588887777",  # fake Nicaragua
                 "NI",
                 "USD",
                 25,
@@ -154,7 +150,6 @@ app = FastAPI(title="PayLink Connect (Maavnica)")
 
 templates = Jinja2Templates(directory=os.path.join(PROJECT_ROOT, "templates"))
 
-# NOTE: these folders must exist in your repo (even empty with .gitkeep)
 app.mount("/static", StaticFiles(directory=os.path.join(PROJECT_ROOT, "static")), name="static")
 app.mount("/legacy", StaticFiles(directory=os.path.join(PROJECT_ROOT, "legacy")), name="legacy")
 
@@ -171,22 +166,15 @@ def startup():
 
 @app.get("/", response_class=HTMLResponse)
 def landing(request: Request):
-    base_url = effective_base_url(request)
     return templates.TemplateResponse(
         "landing.html",
-        {
-            "request": request,
-            "base_url": base_url,
-            # keep variable for your current landing.html
-            "demo_url": f"{base_url}/demo/carlos",
-        },
+        {"request": request, "base_url": BASE_URL, "demo_url": f"{BASE_URL}/demo/carlos"},
     )
 
 
 @app.get("/start", response_class=HTMLResponse)
 def start_form(request: Request):
-    base_url = effective_base_url(request)
-    return templates.TemplateResponse("start.html", {"request": request, "base_url": base_url})
+    return templates.TemplateResponse("start.html", {"request": request, "base_url": BASE_URL})
 
 
 @app.post("/start")
@@ -236,20 +224,19 @@ def connect_page(request: Request, merchant_id: int):
     if not m:
         raise HTTPException(404, "Merchant not found")
 
-    base_url = effective_base_url(request)
+    # page that shows "Connect Stripe" button
     return templates.TemplateResponse(
         "connect.html",
         {
             "request": request,
             "merchant": dict(m),
-            "stripe_client_id": STRIPE_CLIENT_ID,
-            "base_url": base_url,
+            "base_url": BASE_URL,
         },
     )
 
 
 # ============================================================
-# DEMO ROUTE
+# DEMO
 # ============================================================
 
 @app.get("/demo/carlos")
@@ -258,13 +245,12 @@ def demo_carlos():
 
 
 # ============================================================
-# STRIPE CONNECT (STANDARD)
+# STRIPE CONNECT (EXPRESS via Account Links) ✅
 # ============================================================
 
 @app.get("/stripe/connect/start")
-def stripe_connect_start(request: Request, merchant_id: int):
+def stripe_connect_start(merchant_id: int):
     require_stripe_config()
-    base_url = effective_base_url(request)
 
     m = get_merchant_by_id(merchant_id)
     if not m:
@@ -272,21 +258,28 @@ def stripe_connect_start(request: Request, merchant_id: int):
 
     acct_id = m["stripe_account_id"]
 
+    # ✅ Create Express account (allowed via API)
     if not acct_id:
         acct = stripe.Account.create(
-            type="standard",
+            type="express",
             country=(m["country"] or None),
             business_profile={
                 "name": m["business_name"],
-                "url": f"{base_url}/p/{m['slug']}",
+                "url": f"{BASE_URL}/p/{m['slug']}",
+            },
+            # capabilities help avoid “limited” situations
+            capabilities={
+                "card_payments": {"requested": True},
+                "transfers": {"requested": True},
             },
         )
         acct_id = acct["id"]
         with db() as conn:
             conn.execute("UPDATE merchants SET stripe_account_id=? WHERE id=?", (acct_id, merchant_id))
 
-    refresh_url = f"{base_url}/connect/{merchant_id}?refresh=1"
-    return_url = f"{base_url}/stripe/connect/return?merchant_id={merchant_id}"
+    # Use env URLs and attach merchant_id so return/refresh knows who it is
+    refresh_url = f"{STRIPE_CONNECT_REFRESH_URL}?merchant_id={merchant_id}"
+    return_url = f"{STRIPE_CONNECT_RETURN_URL}?merchant_id={merchant_id}"
 
     link = stripe.AccountLink.create(
         account=acct_id,
@@ -297,10 +290,15 @@ def stripe_connect_start(request: Request, merchant_id: int):
     return RedirectResponse(url=link["url"], status_code=303)
 
 
+@app.get("/stripe/connect/refresh")
+def stripe_connect_refresh(merchant_id: int):
+    # just restart the onboarding flow
+    return RedirectResponse(url=f"/stripe/connect/start?merchant_id={merchant_id}", status_code=303)
+
+
 @app.get("/stripe/connect/return", response_class=HTMLResponse)
 def stripe_connect_return(request: Request, merchant_id: int):
     require_stripe_config()
-    base_url = effective_base_url(request)
 
     m = get_merchant_by_id(merchant_id)
     if not m:
@@ -327,7 +325,7 @@ def stripe_connect_return(request: Request, merchant_id: int):
             "request": request,
             "merchant": dict(m2),
             "complete": complete,
-            "paypage_url": f"{base_url}/p/{m2['slug']}",
+            "paypage_url": f"{BASE_URL}/p/{m2['slug']}",
         },
     )
 
@@ -348,13 +346,12 @@ def pay_page(request: Request, slug: str, success: Optional[str] = None):
     wa_msg = f"Hola, quiero pagar por PayLink ({data.get('business_name','')}). ¿Qué monto me indicás?"
     whatsapp_url = f"https://wa.me/{wa}?text=" + quote_plus(wa_msg)
 
-    base_url = effective_base_url(request)
     return templates.TemplateResponse(
         "paypage.html",
         {
             "request": request,
             "merchant": data,
-            "base_url": base_url,
+            "base_url": BASE_URL,
             "whatsapp_url": whatsapp_url,
             "success": success,
         },
@@ -381,7 +378,7 @@ def contact(request: Request):
 
 
 # ============================================================
-# API: CHECKOUT SESSION (JSON + FORM)
+# API: CHECKOUT SESSION
 # ============================================================
 
 class CheckoutRequest(BaseModel):
@@ -392,19 +389,12 @@ class CheckoutRequest(BaseModel):
     description: str = Field("Cobro vía PayLink")
 
 
-def create_session_for_merchant(
-    base_url: str,
-    m: sqlite3.Row,
-    amount_major: int,
-    currency: str,
-    title: str,
-    description: str,
-):
+def create_session_for_merchant(m: sqlite3.Row, amount_major: int, currency: str, title: str, description: str):
     require_stripe_config()
 
     acct_id = m["stripe_account_id"]
     if not acct_id:
-        raise HTTPException(400, "Merchant has not connected Stripe (Connect no completado)")
+        raise HTTPException(400, "Merchant has not connected Stripe yet")
 
     currency = (currency or (m["currency"] or "USD")).lower()
     unit_amount = int(amount_major) * 100
@@ -421,23 +411,15 @@ def create_session_for_merchant(
                 "quantity": 1,
             }
         ],
-        success_url=f"{base_url}/p/{m['slug']}?success=1",
-        cancel_url=f"{base_url}/p/{m['slug']}?success=0",
-        stripe_account=acct_id,  # charge on connected account
+        success_url=f"{BASE_URL}/p/{m['slug']}?success=1",
+        cancel_url=f"{BASE_URL}/p/{m['slug']}?success=0",
+        stripe_account=acct_id,
     )
 
 
 @app.post("/api/create-checkout-session")
 async def create_checkout_session(request: Request):
-    """
-    Accepts:
-      - JSON (recommended, used by WOW paypage)
-      - Form (legacy)
-    Returns:
-      { "url": "<stripe checkout url>" }
-    """
     require_stripe_config()
-    base_url = effective_base_url(request)
 
     content_type = (request.headers.get("content-type") or "").lower()
 
@@ -446,7 +428,6 @@ async def create_checkout_session(request: Request):
             payload: Dict[str, Any] = await request.json()
         except Exception:
             raise HTTPException(400, "Invalid JSON body")
-
         data = CheckoutRequest(**payload)
         slug = data.slug.strip()
         amount = int(data.amount)
@@ -470,18 +451,19 @@ async def create_checkout_session(request: Request):
     if not m:
         raise HTTPException(404, "Merchant not found")
 
-    session = create_session_for_merchant(base_url, m, amount, currency, title, description)
+    session = create_session_for_merchant(m, amount, currency, title, description)
     return JSONResponse({"url": session["url"]})
 
 
 # ============================================================
-# LEGACY ENTRYPOINT (OPTIONAL)
+# LEGACY ENTRYPOINT
 # ============================================================
 
 @app.get("/paylink")
 @app.get("/paylink/")
 def legacy_redirect():
     return RedirectResponse(url="/legacy/index.html", status_code=302)
+
 
 
 
