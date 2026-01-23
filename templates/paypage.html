@@ -1,431 +1,544 @@
-<!DOCTYPE html>
+<!doctype html>
 <html lang="es">
 <head>
-  <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width,initial-scale=1" />
-  <title>PayLink — Cobro rápido</title>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>PayLink — {{ merchant.business_name }}</title>
+
+  <meta name="theme-color" content="#070B14" />
+  <meta name="description" content="Cobrá en segundos con tarjeta desde WhatsApp. Pagos seguros con Stripe. Comprobante automático." />
+
   <style>
     :root{
       --bg:#070B14;
-      --card:#0E1628;
-      --muted:#9FB0C6;
-      --text:#EAF2FF;
-      --accent:#27E0A3;
-      --accent2:#2DB2FF;
-      --border:rgba(255,255,255,.10);
-      --shadow: 0 20px 60px rgba(0,0,0,.55);
-      --radius:18px;
-      --radius2:24px;
+      --card:rgba(255,255,255,.08);
+      --card2:rgba(255,255,255,.05);
+      --text:rgba(255,255,255,.92);
+      --muted:rgba(255,255,255,.72);
+      --line:rgba(255,255,255,.12);
+      --shadow:0 18px 55px rgba(0,0,0,.55);
+      --radius:22px;
+
+      --green:#22c55e;
+      --green2:#16a34a;
+      --blue:#2DB2FF;
+      --blue2:#1f8fd1;
+      --warn:#f59e0b;
+      --danger:#ef4444;
+
+      --max:1100px;
     }
     *{box-sizing:border-box}
     body{
       margin:0;
-      font-family: ui-sans-serif, system-ui, -apple-system, Segoe UI, Roboto, Arial;
-      background: radial-gradient(1200px 700px at 20% 10%, rgba(45,178,255,.18), transparent 55%),
-                  radial-gradient(900px 600px at 80% 30%, rgba(39,224,163,.18), transparent 60%),
-                  var(--bg);
-      color:var(--text);
+      font-family: system-ui,-apple-system,Segoe UI,Roboto,Helvetica,Arial;
       min-height:100vh;
-      display:flex;
-      align-items:center;
-      justify-content:center;
-      padding:24px;
+      color:var(--text);
+      background:
+        radial-gradient(900px 600px at 15% 15%, rgba(34,197,94,.20), transparent 60%),
+        radial-gradient(900px 600px at 85% 10%, rgba(45,178,255,.18), transparent 60%),
+        var(--bg);
     }
-    .wrap{
-      width:min(980px, 100%);
+    a{color:inherit}
+    .wrap{max-width:var(--max);margin:0 auto;padding:22px 18px 64px;}
+
+    .topbar{
+      display:flex;justify-content:space-between;align-items:center;gap:12px;flex-wrap:wrap;
+      margin-bottom:16px;
+    }
+    .brand{
+      display:flex;align-items:center;gap:10px;text-decoration:none;
+    }
+    .logo{
+      width:40px;height:40px;border-radius:14px;
+      background:linear-gradient(135deg,rgba(34,197,94,.95),rgba(45,178,255,.75));
+      box-shadow:0 16px 40px rgba(34,197,94,.16);
+    }
+    .brand h1{
+      margin:0;font-size:14px;letter-spacing:.22em;text-transform:uppercase;
+    }
+    .brand p{margin:0;color:var(--muted);font-size:13px;}
+
+    .grid{
       display:grid;
-      grid-template-columns: 1.15fr .85fr;
-      gap:18px;
+      grid-template-columns: 1.05fr .95fr;
+      gap:14px;
+      align-items:start;
     }
-    @media(max-width:900px){
-      .wrap{grid-template-columns:1fr}
+    @media(max-width:980px){
+      .grid{grid-template-columns:1fr}
     }
+
     .card{
-      background: linear-gradient(180deg, rgba(255,255,255,.06), rgba(255,255,255,.03));
-      border:1px solid var(--border);
-      border-radius: var(--radius2);
-      box-shadow: var(--shadow);
+      background:linear-gradient(180deg,var(--card),var(--card2));
+      border:1px solid var(--line);
+      border-radius:var(--radius);
+      box-shadow:var(--shadow);
+      padding:18px;
       overflow:hidden;
     }
-    .left{ padding:22px 22px 18px; }
-    .right{ padding:18px; }
 
-    .top{
-      display:flex;
-      gap:14px;
-      align-items:center;
-    }
-    .avatar{
-      width:58px;height:58px;border-radius:16px;
-      background: linear-gradient(135deg, rgba(45,178,255,.35), rgba(39,224,163,.25));
-      border:1px solid var(--border);
-      display:flex;
-      align-items:center;
-      justify-content:center;
-      font-weight:800;
-      letter-spacing:.5px;
-      user-select:none;
-    }
-    .title{
-      display:flex;
-      flex-direction:column;
-      gap:3px;
-      min-width:0;
-    }
-    .title h1{
-      margin:0;
-      font-size:20px;
-      line-height:1.1;
-    }
-    .title p{
-      margin:0;
-      color:var(--muted);
-      font-size:13px;
-      line-height:1.3;
-    }
-    .badgeRow{
-      margin-top:12px;
-      display:flex;
-      flex-wrap:wrap;
-      gap:8px;
-    }
-    .badge{
-      font-size:12px;
-      padding:7px 10px;
-      border-radius:999px;
-      border:1px solid var(--border);
-      background: rgba(255,255,255,.04);
-      color:var(--muted);
-      white-space:nowrap;
-    }
     .hero{
-      margin-top:14px;
       padding:16px;
-      border-radius: var(--radius);
-      background: rgba(0,0,0,.25);
-      border:1px solid var(--border);
+      border-radius:18px;
+      border:1px solid var(--line);
+      background:rgba(0,0,0,.22);
     }
-    .hero h2{
-      margin:0 0 6px;
-      font-size:18px;
+    .heroTitle{
+      margin:0 0 8px;
+      font-size:22px;
+      line-height:1.15;
+      letter-spacing:-.01em;
     }
-    .hero p{
+    .heroSub{
       margin:0;
       color:var(--muted);
       font-size:14px;
       line-height:1.45;
     }
-    .hero p b{
-      color:#D9E7FF;
+
+    .chips{display:flex;flex-wrap:wrap;gap:10px;margin-top:12px;}
+    .chip{
+      display:inline-flex;align-items:center;gap:8px;
+      padding:8px 12px;border-radius:999px;
+      border:1px solid var(--line);
+      background:rgba(255,255,255,.03);
+      color:rgba(255,255,255,.80);
       font-weight:900;
+      font-size:12.5px;
+      white-space:nowrap;
     }
 
-    .ctaRow{
-      margin-top:14px;
-      display:grid;
-      grid-template-columns:1fr 1fr;
-      gap:10px;
-    }
-    @media(max-width:520px){
-      .ctaRow{grid-template-columns:1fr}
-    }
-
+    .ctaRow{display:flex;flex-wrap:wrap;gap:12px;align-items:center;margin-top:14px;}
     .btn{
-      border:none;
-      border-radius: 16px;
-      padding:14px 14px;
-      font-weight:900;
+      display:inline-flex;align-items:center;justify-content:center;gap:8px;
+      padding:13px 14px;border-radius:16px;
+      text-decoration:none;font-weight:900;
+      border:1px solid var(--line);
+      background:rgba(255,255,255,.03);
+      color:var(--text);
       cursor:pointer;
-      width:100%;
-      display:flex;
-      align-items:center;
-      justify-content:center;
-      gap:10px;
-      transition: transform .08s ease, filter .12s ease;
-      text-decoration:none;
+      white-space:nowrap;
+      user-select:none;
     }
-    .btn:active{transform: translateY(1px)}
-    .btnPrimary{
-      background: linear-gradient(135deg, var(--accent), rgba(39,224,163,.55));
-      color:#062013;
+    .btnGreen{
+      background:linear-gradient(135deg,var(--green),var(--green2));
+      color:#06110a;border:none;
+      box-shadow:0 18px 45px rgba(34,197,94,.20);
+      min-width: 220px;
     }
-    .btnSecondary{
-      background: linear-gradient(135deg, var(--accent2), rgba(45,178,255,.55));
-      color:#061625;
+    .btnBlue{
+      background:linear-gradient(135deg,var(--blue),var(--blue2));
+      color:#061625;border:none;
+      box-shadow:0 18px 45px rgba(45,178,255,.16);
+      min-width: 220px;
+    }
+    .btnSmall{
+      padding:10px 12px;border-radius:14px;font-size:13px;
     }
 
-    .section{
-      margin-top:16px;
-      padding:16px;
-      border-radius: var(--radius);
-      border:1px solid var(--border);
-      background: rgba(255,255,255,.03);
-    }
-    .section h3{
-      margin:0 0 10px;
+    .sectionTitle{
+      margin:14px 0 10px;
       font-size:14px;
-      color:#D9E7FF;
+      font-weight:900;
+      color:rgba(255,255,255,.86);
       letter-spacing:.2px;
     }
 
-    .quickGrid{
+    .amountGrid{
       display:grid;
-      grid-template-columns: repeat(3, 1fr);
+      grid-template-columns: 1fr 1fr 1fr;
       gap:10px;
     }
     @media(max-width:520px){
-      .quickGrid{grid-template-columns:1fr}
+      .amountGrid{grid-template-columns:1fr}
     }
     .amountBtn{
       padding:14px 12px;
-      border-radius: 16px;
-      border:1px solid var(--border);
-      background: rgba(0,0,0,.22);
-      color:var(--text);
-      font-weight:900;
+      border-radius:16px;
+      border:1px solid var(--line);
+      background:rgba(255,255,255,.03);
       cursor:pointer;
       text-align:center;
+      font-weight:900;
+      color:rgba(255,255,255,.90);
+      transition: transform .05s ease;
     }
-    .amountBtn:hover{filter:brightness(1.08)}
+    .amountBtn:active{transform:scale(.99)}
     .amountBtn small{
       display:block;
-      margin-top:4px;
+      margin-top:6px;
+      font-weight:700;
       color:var(--muted);
-      font-weight:800;
       font-size:12px;
     }
+    .amountBtn.active{
+      border-color:rgba(34,197,94,.45);
+      background:rgba(34,197,94,.10);
+      box-shadow:0 12px 30px rgba(34,197,94,.08);
+    }
 
-    .customRow{
+    .inputRow{
+      margin-top:10px;
       display:flex;
       gap:10px;
-      margin-top:10px;
+      flex-wrap:wrap;
       align-items:center;
     }
-    .customRow input{
-      flex:1;
-      padding:13px 14px;
-      border-radius: 14px;
-      border:1px solid var(--border);
-      background: rgba(0,0,0,.25);
+    .input{
+      flex:1 1 260px;
+      padding:12px 12px;
+      border-radius:14px;
+      border:1px solid var(--line);
+      background:rgba(0,0,0,.20);
       color:var(--text);
       outline:none;
       font-size:14px;
     }
-    .customRow button{
-      min-width:140px;
-      padding:13px 14px;
-      border-radius: 14px;
-      border: none;
-      cursor:pointer;
-      font-weight:900;
-      background: rgba(255,255,255,.08);
-      color: var(--text);
-      border:1px solid var(--border);
+    .input:focus{
+      border-color:rgba(45,178,255,.45);
+      box-shadow:0 0 0 3px rgba(45,178,255,.15);
     }
 
-    .fine{
+    .msg{
       margin-top:12px;
-      color:var(--muted);
-      font-size:12px;
+      padding:12px 14px;
+      border-radius:16px;
+      border:1px solid rgba(45,178,255,.25);
+      background:rgba(45,178,255,.08);
+      color:rgba(255,255,255,.82);
+      font-size:13px;
       line-height:1.4;
     }
-    .fine a{color:#CFE6FF;text-decoration:none}
-    .fine a:hover{text-decoration:underline}
+    .msg.ok{
+      border-color:rgba(34,197,94,.28);
+      background:rgba(34,197,94,.08);
+    }
+    .msg.warn{
+      border-color:rgba(245,158,11,.28);
+      background:rgba(245,158,11,.08);
+    }
+    .msg.danger{
+      border-color:rgba(239,68,68,.28);
+      background:rgba(239,68,68,.08);
+    }
 
-    .right .box{
-      border-radius: var(--radius2);
-      border:1px solid var(--border);
-      background: rgba(0,0,0,.25);
-      padding:16px;
-    }
-    .steps{
-      display:grid;
-      gap:10px;
-      margin-top:10px;
-    }
-    .step{
-      display:flex;
-      gap:10px;
-      align-items:flex-start;
-      padding:12px;
-      border-radius: 16px;
-      border:1px solid var(--border);
-      background: rgba(255,255,255,.03);
-    }
-    .num{
-      width:28px;height:28px;border-radius:10px;
-      display:flex;align-items:center;justify-content:center;
+    .rightCardTitle{
+      margin:0 0 10px;
+      font-size:14px;
       font-weight:900;
-      background: rgba(45,178,255,.18);
-      border:1px solid var(--border);
-      color:#CFE6FF;
-      flex:0 0 auto;
-      user-select:none;
+      color:rgba(255,255,255,.86);
+      letter-spacing:.2px;
     }
-    .step b{display:block;margin-bottom:2px}
-    .muted{color:var(--muted); font-size:13px; line-height:1.35}
-    .pill{
-      display:inline-flex;
+    .steps{display:grid;gap:10px;}
+    .step{
+      border:1px solid var(--line);
+      border-radius:16px;
+      padding:12px;
+      background:rgba(255,255,255,.03);
+      color:var(--muted);
+      font-size:13px;
+      line-height:1.35;
+    }
+    .step b{color:rgba(255,255,255,.90)}
+    .kpiRow{
+      margin-top:10px;
+      display:flex;
+      flex-wrap:wrap;
+      gap:10px;
       align-items:center;
-      gap:8px;
-      padding:8px 10px;
-      border-radius:999px;
-      border:1px solid var(--border);
-      background: rgba(255,255,255,.04);
+    }
+    .pill{
+      display:inline-flex;align-items:center;gap:8px;
+      padding:8px 10px;border-radius:999px;
+      border:1px solid rgba(255,255,255,.14);
+      background:rgba(0,0,0,.18);
+      color:rgba(255,255,255,.82);
+      font-weight:900;
+      font-size:12px;
+      white-space:nowrap;
+    }
+
+    .shareRow{
+      display:flex;gap:10px;flex-wrap:wrap;align-items:center;margin-top:10px;
+    }
+    .miniLink{
+      flex:1 1 260px;
+      padding:12px 12px;
+      border-radius:14px;
+      border:1px solid var(--line);
+      background:rgba(0,0,0,.20);
+      color:rgba(255,255,255,.85);
+      font-size:13px;
+      overflow:hidden;
+      text-overflow:ellipsis;
+      white-space:nowrap;
+    }
+
+    .foot{
+      margin-top:14px;
       color:var(--muted);
       font-size:12px;
-      margin-top:10px;
+      line-height:1.35;
     }
+    .foot a{
+      color:rgba(255,255,255,.78);
+      text-decoration:none;
+      border-bottom:1px dashed rgba(255,255,255,.25);
+    }
+    .foot a:hover{color:var(--text)}
   </style>
 </head>
-<body>
 
+<body>
   <div class="wrap">
 
-    <!-- LEFT -->
-    <div class="card left">
-      <div class="top">
-        <div class="avatar">CM</div>
-        <div class="title">
-          <h1>PayLink — Demo Carlos</h1>
-          <p>Cobrá en 10 segundos desde WhatsApp.</p>
+    <div class="topbar">
+      <a class="brand" href="/">
+        <div class="logo"></div>
+        <div>
+          <h1>MAAVNICA</h1>
+          <p>PayLink — Pago seguro (Stripe)</p>
         </div>
-      </div>
+      </a>
+      <a class="btn btnSmall" href="/demo/carlos">🔥 Ver demo</a>
+    </div>
 
-      <div class="badgeRow">
-        <div class="badge">🇳🇮 Nicaragua</div>
-        <div class="badge">🔒 Pago seguro</div>
-        <div class="badge">💳 Pago con tarjeta</div>
-        <div class="badge">⚡ Comprobante instantáneo</div>
-        <div class="badge">💬 WhatsApp → Pago</div>
-      </div>
+    <div class="grid">
 
-      <div class="hero">
-        <h2>Carlos Martinez · Reparación express de teléfonos</h2>
-        <p>
-          Un cliente te escribe por WhatsApp, le mandás un link y paga al instante.
-          <br/>Simple. Pro. Sin vueltas.
-          <br/><b>Sin efectivo. Sin transferencias. Sin complicaciones.</b>
-        </p>
-      </div>
+      <!-- LEFT: PAY -->
+      <div class="card">
 
-      <div class="ctaRow">
-        <a class="btn btnSecondary" id="whatsappBtn"
-           href="https://wa.me/50588887777?text=Hola%20Carlos%2C%20quiero%20pagar%20una%20se%C3%B1a%20por%20PayLink.%20%C2%BFCu%C3%A1l%20monto%20me%20indic%C3%A1s%3F"
-           target="_blank" rel="noopener">
-          💬 Escribir por WhatsApp
-        </a>
-        <button class="btn btnPrimary" onclick="pay(49)">
-          💳 Pagar seña (49$)
-        </button>
-      </div>
+        <div class="hero">
+          <h2 class="heroTitle">{{ merchant.business_name }}</h2>
+          <p class="heroSub">
+            Cobrá <b>en 10 segundos</b> desde WhatsApp.
+            Simple. Pro. Sin vueltas.
+            <br/><b>Sin efectivo. Sin transferencias. Sin complicaciones.</b>
+          </p>
 
-      <div class="section">
-        <h3>Pago rápido</h3>
-        <div class="quickGrid">
-          <button class="amountBtn" onclick="pay(25)">
-            25$
+          <div class="chips">
+            <span class="chip">🇳🇮 {{ merchant.country or "NI" }}</span>
+            <span class="chip">🔒 Pago seguro</span>
+            <span class="chip">💳 Pago con tarjeta</span>
+            <span class="chip">⚡ Comprobante instantáneo</span>
+            <span class="chip">🌍 Tarjetas locales e internacionales</span>
+            <span class="chip">📲 Apple Pay / Google Pay</span>
+          </div>
+        </div>
+
+        {% if success == "1" %}
+          <div class="msg ok">✅ Pago realizado. ¡Gracias! Si querés, avisá por WhatsApp para confirmar el servicio.</div>
+        {% elif success == "0" %}
+          <div class="msg warn">⚠️ Pago cancelado. Podés intentarlo de nuevo cuando quieras.</div>
+        {% endif %}
+
+        <div class="ctaRow">
+          <a class="btn btnBlue" href="{{ whatsapp_url }}" target="_blank" rel="noopener">💬 Escribir por WhatsApp</a>
+          <button class="btn btnGreen" id="payNowBtn">💳 Pagar ahora</button>
+        </div>
+
+        <div class="sectionTitle">Pago rápido</div>
+
+        <div class="amountGrid">
+          <button class="amountBtn" data-amount="{{ merchant.amount1 or 25 }}" data-label="Consulta / Diagnóstico">
+            <span>{{ merchant.amount1 or 25 }}{{ "$" }}</span>
             <small>Consulta / Diagnóstico</small>
           </button>
-          <button class="amountBtn" onclick="pay(49)">
-            49$
+          <button class="amountBtn active" data-amount="{{ merchant.amount2 or 49 }}" data-label="Seña / Servicio express">
+            <span>{{ merchant.amount2 or 49 }}{{ "$" }}</span>
             <small>Seña / Servicio express</small>
           </button>
-          <button class="amountBtn" onclick="pay(79)">
-            79$
+          <button class="amountBtn" data-amount="{{ merchant.amount3 or 79 }}" data-label="Servicio + repuestos">
+            <span>{{ merchant.amount3 or 79 }}{{ "$" }}</span>
             <small>Servicio + repuestos</small>
           </button>
         </div>
 
-        <div class="customRow">
-          <input id="customAmount" type="number" min="1" step="1" placeholder="Otro monto (USD) ej: 120" />
-          <button onclick="payCustom()">Crear link</button>
+        <div class="inputRow">
+          <input class="input" id="customAmount" type="number" min="1" placeholder="Otro monto ({{ merchant.currency or "USD" }}) ej: 120" />
+          <button class="btn btnSmall" id="createLinkBtn">Crear link</button>
         </div>
 
-        <div class="fine">
-          🔐 Pago seguro con Stripe. Recibís un comprobante automáticamente.
-          <br/>
-          Al continuar, aceptás los <a href="/cgv-paylink" target="_blank">Términos y Condiciones</a> y el <a href="/mentions-legales" target="_blank">Aviso legal</a>.
+        <div class="msg" id="statusMsg" style="display:none;"></div>
+
+        <div class="sectionTitle">Compartir por SMS o email (también funciona)</div>
+        <div class="shareRow">
+          <div class="miniLink" id="pageUrl">/p/{{ merchant.slug }}</div>
+          <button class="btn btnSmall" id="copyBtn">📋 Copiar link</button>
+          <a class="btn btnSmall" id="mailBtn" href="#" rel="noopener">✉️ Email</a>
+        </div>
+
+        <div class="foot">
+          🔐 Pagos procesados por Stripe. Maavnica es proveedor técnico (no es banco).<br/>
+          Al continuar, aceptás los <a href="/cgv-paylink" target="_blank">Términos</a> y el <a href="/mentions-legales" target="_blank">Aviso legal</a>.
         </div>
       </div>
-    </div>
 
-    <!-- RIGHT -->
-    <div class="card right">
-      <div class="box">
-        <b style="font-size:15px;">¿Por qué es “wow”?</b>
+      <!-- RIGHT: WHY WOW -->
+      <div class="card">
+        <div class="rightCardTitle">¿Por qué es “WOW”?</div>
+
         <div class="steps">
-          <div class="step">
-            <div class="num">1</div>
-            <div>
-              <b>El cliente te escribe por WhatsApp</b>
-              <div class="muted">Conversación normal. Cero fricción.</div>
-            </div>
-          </div>
-          <div class="step">
-            <div class="num">2</div>
-            <div>
-              <b>Le enviás un PayLink</b>
-              <div class="muted">Un link único, listo para pagar.</div>
-            </div>
-          </div>
-          <div class="step">
-            <div class="num">3</div>
-            <div>
-              <b>El pago es inmediato</b>
-              <div class="muted">Tarjeta bancaria. Comprobante. Listo.</div>
-            </div>
-          </div>
+          <div class="step"><b>1) El cliente te escribe por WhatsApp</b><br/>Conversación normal. Cero fricción.</div>
+          <div class="step"><b>2) Le enviás un PayLink</b><br/>Un link único, listo para pagar (WhatsApp / SMS / email).</div>
+          <div class="step"><b>3) El pago es inmediato</b><br/>Tarjeta bancaria. Comprobante. Listo.</div>
         </div>
 
-        <div class="pill">⚡ Ideal para servicios · artesanos · señas · urgencias</div>
-        <div class="pill">📲 Funciona desde el celular en 1 minuto</div>
-      </div>
-    </div>
+        <div class="kpiRow">
+          <span class="pill">⚡ Funciona desde el celular</span>
+          <span class="pill">🧾 Comprobante automático</span>
+          <span class="pill">🌍 Tarjetas locales/internacionales</span>
+          <span class="pill">🔒 Stripe (seguro)</span>
+        </div>
 
+        <div class="msg" style="margin-top:12px;">
+          Ideal para <b>servicios</b>, <b>señas</b>, <b>urgencias</b>, <b>artesanos</b> y <b>pequeños negocios</b>.
+        </div>
+
+        <div class="msg" style="margin-top:12px;">
+          Tip: cuando el cliente duda, mandale el link y decile:<br/>
+          <b>“Pagás con tarjeta y te envío el comprobante en el momento.”</b>
+        </div>
+      </div>
+
+    </div>
   </div>
 
   <script>
-    // Requiere endpoint backend:
-    // POST /api/create-checkout-session
-    // body: { amount, currency, slug, title, description }
-    // response: { url: "https://checkout..." }
+    (function(){
+      const slug = "{{ merchant.slug }}";
+      const currency = "{{ (merchant.currency or 'USD')|lower }}";
 
-    async function pay(amount) {
-      try {
-        const n = Number(amount);
-        if (!n || n <= 0) return;
+      const amountButtons = Array.from(document.querySelectorAll(".amountBtn"));
+      const payNowBtn = document.getElementById("payNowBtn");
+      const createLinkBtn = document.getElementById("createLinkBtn");
+      const customAmount = document.getElementById("customAmount");
+      const statusMsg = document.getElementById("statusMsg");
 
-        const res = await fetch("/api/create-checkout-session", {
-          method: "POST",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({
-            amount: n,
-            currency: "usd",
-            slug: "carlos",
-            title: "Pago Carlos (Demo)",
-            description: "Cobro express vía PayLink"
-          })
-        });
+      // Build absolute URL for share
+      const pageUrlEl = document.getElementById("pageUrl");
+      const pageAbs = window.location.origin + "/p/" + slug;
+      pageUrlEl.textContent = pageAbs;
 
-        const data = await res.json();
-        if (data && data.url) {
-          window.location.href = data.url;
+      const copyBtn = document.getElementById("copyBtn");
+      const mailBtn = document.getElementById("mailBtn");
+
+      let selectedAmount = null;
+      let selectedLabel = null;
+
+      function showMsg(text, kind){
+        statusMsg.style.display = "block";
+        statusMsg.className = "msg" + (kind ? (" " + kind) : "");
+        statusMsg.textContent = text;
+      }
+
+      function selectBtn(btn){
+        amountButtons.forEach(b => b.classList.remove("active"));
+        btn.classList.add("active");
+        selectedAmount = parseInt(btn.getAttribute("data-amount") || "0", 10) || 0;
+        selectedLabel = btn.getAttribute("data-label") || "Pago";
+        // Update main CTA label
+        if (selectedAmount > 0){
+          payNowBtn.textContent = "💳 Pagar ahora (" + selectedAmount + "$)";
+        } else {
+          payNowBtn.textContent = "💳 Pagar ahora";
+        }
+      }
+
+      // Init: select the active one or first
+      const initActive = amountButtons.find(b => b.classList.contains("active")) || amountButtons[0];
+      if (initActive) selectBtn(initActive);
+
+      amountButtons.forEach(btn => {
+        btn.addEventListener("click", () => selectBtn(btn));
+      });
+
+      async function createCheckout(amount){
+        if (!amount || amount <= 0){
+          showMsg("Elegí un monto válido.", "warn");
           return;
         }
-        alert("No se pudo generar el pago. Revisá el backend.");
-      } catch (e) {
-        console.error(e);
-        alert("Error de pago. Revisá el backend.");
+
+        payNowBtn.disabled = true;
+        createLinkBtn.disabled = true;
+        showMsg("Creando link de pago…", "");
+
+        try{
+          const res = await fetch("/api/create-checkout-session", {
+            method: "POST",
+            headers: {"Content-Type":"application/json"},
+            body: JSON.stringify({
+              slug: slug,
+              amount: amount,
+              currency: currency,
+              title: selectedLabel ? ("PayLink — " + selectedLabel) : "Pago (PayLink)",
+              description: "Pago seguro con tarjeta (Stripe)"
+            })
+          });
+
+          if (!res.ok){
+            const txt = await res.text();
+            throw new Error(txt || ("HTTP " + res.status));
+          }
+
+          const data = await res.json();
+          if (!data.url) throw new Error("No se recibió la URL de Stripe.");
+          window.location.href = data.url;
+
+        } catch(e){
+          showMsg("Error: no se pudo crear el pago. " +
+                  "Si todavía no conectaste Stripe, volvé a conectar tu cuenta. " +
+                  "(" + (e && e.message ? e.message : "error") + ")",
+                  "danger");
+        } finally {
+          payNowBtn.disabled = false;
+          createLinkBtn.disabled = false;
+        }
       }
-    }
 
-    function payCustom() {
-      const v = document.getElementById("customAmount").value;
-      pay(v);
-    }
+      payNowBtn.addEventListener("click", () => {
+        // If custom amount is filled, prioritize it
+        const custom = parseInt((customAmount.value || "").trim(), 10);
+        if (custom && custom > 0){
+          selectedLabel = "Monto personalizado";
+          createCheckout(custom);
+          return;
+        }
+        createCheckout(selectedAmount);
+      });
+
+      createLinkBtn.addEventListener("click", () => {
+        const val = parseInt((customAmount.value || "").trim(), 10);
+        if (!val || val <= 0){
+          showMsg("Ingresá un monto (ej: 120) y luego “Crear link”.", "warn");
+          return;
+        }
+        selectedLabel = "Monto personalizado";
+        createCheckout(val);
+      });
+
+      copyBtn.addEventListener("click", async () => {
+        try{
+          await navigator.clipboard.writeText(pageAbs);
+          showMsg("✅ Link copiado. Pegalo en WhatsApp / SMS / email.", "ok");
+        } catch(e){
+          showMsg("Copiado manual: " + pageAbs, "warn");
+        }
+      });
+
+      // mailto message
+      const mailSubject = encodeURIComponent("Link de pago (PayLink)");
+      const mailBody = encodeURIComponent(
+        "Hola, te paso el link para pagar con tarjeta (Stripe).\\n\\n" +
+        pageAbs + "\\n\\n" +
+        "Gracias."
+      );
+      mailBtn.href = "mailto:?subject=" + mailSubject + "&body=" + mailBody;
+
+    })();
   </script>
-
 </body>
 </html>
+
 
