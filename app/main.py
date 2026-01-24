@@ -25,6 +25,9 @@ BASE_URL = os.getenv("BASE_URL", "http://127.0.0.1:8000").rstrip("/")
 STRIPE_SECRET_KEY = os.getenv("STRIPE_SECRET_KEY", "").strip()
 STRIPE_WEBHOOK_SECRET = os.getenv("STRIPE_WEBHOOK_SECRET", "").strip()  # optional
 
+# 🔥 B1 subscription (Stripe Payment Link)
+PAYLINK_SUBSCRIBE_URL = os.getenv("PAYLINK_SUBSCRIBE_URL", "").strip()
+
 # Use your Render env vars (you already added them)
 STRIPE_CONNECT_RETURN_URL = os.getenv(
     "STRIPE_CONNECT_RETURN_URL",
@@ -168,7 +171,28 @@ def startup():
 def landing(request: Request):
     return templates.TemplateResponse(
         "landing.html",
-        {"request": request, "base_url": BASE_URL, "demo_url": f"{BASE_URL}/demo/carlos"},
+        {
+            "request": request,
+            "base_url": BASE_URL,
+            "demo_url": f"{BASE_URL}/demo/carlos",
+            # 🔥 B1 subscription CTA
+            "subscribe_url": PAYLINK_SUBSCRIBE_URL,
+        },
+    )
+
+
+@app.get("/success", response_class=HTMLResponse)
+def subscribe_success(request: Request):
+    """
+    After the user pays the subscription (Stripe Payment Link),
+    Stripe redirects here. Next step: create PayLink + connect Stripe.
+    """
+    return templates.TemplateResponse(
+        "success.html",
+        {
+            "request": request,
+            "base_url": BASE_URL,
+        },
     )
 
 
@@ -249,13 +273,26 @@ def demo_carlos():
 # ============================================================
 
 @app.get("/stripe/connect/start")
-def stripe_connect_start(merchant_id: int):
+def stripe_connect_start(merchant_id: Optional[int] = None, slug: Optional[str] = None):
+    """
+    Supports:
+      - /stripe/connect/start?merchant_id=123
+      - /stripe/connect/start?slug=carlos
+    """
     require_stripe_config()
 
-    m = get_merchant_by_id(merchant_id)
+    m = None
+    if merchant_id is not None:
+        m = get_merchant_by_id(int(merchant_id))
+    elif slug:
+        m = get_merchant_by_slug(slug.strip())
+    else:
+        raise HTTPException(400, "Missing merchant_id or slug")
+
     if not m:
         raise HTTPException(404, "Merchant not found")
 
+    merchant_id = int(m["id"])
     acct_id = m["stripe_account_id"]
 
     # ✅ Create Express account (allowed via API)
@@ -346,6 +383,9 @@ def pay_page(request: Request, slug: str, success: Optional[str] = None):
     wa_msg = f"Hola, quiero pagar por PayLink ({data.get('business_name','')}). ¿Qué monto me indicás?"
     whatsapp_url = f"https://wa.me/{wa}?text=" + quote_plus(wa_msg)
 
+    stripe_connected = bool(data.get("stripe_account_id"))
+    connect_url = f"{BASE_URL}/stripe/connect/start?slug={data.get('slug')}"
+
     return templates.TemplateResponse(
         "paypage.html",
         {
@@ -354,6 +394,9 @@ def pay_page(request: Request, slug: str, success: Optional[str] = None):
             "base_url": BASE_URL,
             "whatsapp_url": whatsapp_url,
             "success": success,
+            # 🔥 used by template to show connect button
+            "stripe_connected": stripe_connected,
+            "connect_url": connect_url,
         },
     )
 

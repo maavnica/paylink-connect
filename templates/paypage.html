@@ -23,7 +23,6 @@
       --green2:#16a34a;
       --blue:#2DB2FF;
       --blue2:#1f8fd1;
-      --warn:#f59e0b;
       --danger:#ef4444;
 
       --max:1100px;
@@ -108,6 +107,8 @@
       font-size:12.5px;
       white-space:nowrap;
     }
+    .chip.ok{border-color:rgba(34,197,94,.35); background:rgba(34,197,94,.10)}
+    .chip.bad{border-color:rgba(239,68,68,.35); background:rgba(239,68,68,.10)}
 
     .ctaRow{display:flex;flex-wrap:wrap;gap:12px;align-items:center;margin-top:14px;}
     .btn{
@@ -131,6 +132,12 @@
       background:linear-gradient(135deg,var(--blue),var(--blue2));
       color:#061625;border:none;
       box-shadow:0 18px 45px rgba(45,178,255,.16);
+      min-width: 220px;
+    }
+    .btnDanger{
+      background:linear-gradient(135deg,rgba(239,68,68,.95),rgba(239,68,68,.70));
+      color:#140606;border:none;
+      box-shadow:0 18px 45px rgba(239,68,68,.18);
       min-width: 220px;
     }
     .btnSmall{
@@ -210,18 +217,9 @@
       font-size:13px;
       line-height:1.4;
     }
-    .msg.ok{
-      border-color:rgba(34,197,94,.28);
-      background:rgba(34,197,94,.08);
-    }
-    .msg.warn{
-      border-color:rgba(245,158,11,.28);
-      background:rgba(245,158,11,.08);
-    }
-    .msg.danger{
-      border-color:rgba(239,68,68,.28);
-      background:rgba(239,68,68,.08);
-    }
+    .msg.ok{border-color:rgba(34,197,94,.28); background:rgba(34,197,94,.08);}
+    .msg.warn{border-color:rgba(245,158,11,.28); background:rgba(245,158,11,.08);}
+    .msg.danger{border-color:rgba(239,68,68,.28); background:rgba(239,68,68,.08);}
 
     .rightCardTitle{
       margin:0 0 10px;
@@ -306,9 +304,7 @@
 
     <div class="grid">
 
-      <!-- LEFT: PAY -->
       <div class="card">
-
         <div class="hero">
           <h2 class="heroTitle">{{ merchant.business_name }}</h2>
           <p class="heroSub">
@@ -324,6 +320,12 @@
             <span class="chip">⚡ Comprobante instantáneo</span>
             <span class="chip">🌍 Tarjetas locales e internacionales</span>
             <span class="chip">📲 Apple Pay / Google Pay</span>
+
+            {% if merchant.stripe_account_id %}
+              <span class="chip ok">✅ Stripe conectado</span>
+            {% else %}
+              <span class="chip bad">⛔ Stripe no conectado</span>
+            {% endif %}
           </div>
         </div>
 
@@ -335,7 +337,12 @@
 
         <div class="ctaRow">
           <a class="btn btnBlue" href="{{ whatsapp_url }}" target="_blank" rel="noopener">💬 Escribir por WhatsApp</a>
-          <button class="btn btnGreen" id="payNowBtn">💳 Pagar ahora</button>
+
+          {% if merchant.stripe_account_id %}
+            <button class="btn btnGreen" id="payNowBtn">💳 Pagar ahora</button>
+          {% else %}
+            <a class="btn btnDanger" href="/connect/{{ merchant.id }}">🔌 Conectar Stripe para cobrar</a>
+          {% endif %}
         </div>
 
         <div class="sectionTitle">Pago rápido</div>
@@ -357,7 +364,11 @@
 
         <div class="inputRow">
           <input class="input" id="customAmount" type="number" min="1" placeholder="Otro monto ({{ merchant.currency or "USD" }}) ej: 120" />
-          <button class="btn btnSmall" id="createLinkBtn">Crear link</button>
+          {% if merchant.stripe_account_id %}
+            <button class="btn btnSmall" id="createLinkBtn">Crear link</button>
+          {% else %}
+            <a class="btn btnSmall" href="/connect/{{ merchant.id }}">Conectar primero</a>
+          {% endif %}
         </div>
 
         <div class="msg" id="statusMsg" style="display:none;"></div>
@@ -375,7 +386,6 @@
         </div>
       </div>
 
-      <!-- RIGHT: WHY WOW -->
       <div class="card">
         <div class="rightCardTitle">¿Por qué es “WOW”?</div>
 
@@ -409,6 +419,7 @@
     (function(){
       const slug = "{{ merchant.slug }}";
       const currency = "{{ (merchant.currency or 'USD')|lower }}";
+      const stripeConnected = {{ "true" if merchant.stripe_account_id else "false" }};
 
       const amountButtons = Array.from(document.querySelectorAll(".amountBtn"));
       const payNowBtn = document.getElementById("payNowBtn");
@@ -416,7 +427,6 @@
       const customAmount = document.getElementById("customAmount");
       const statusMsg = document.getElementById("statusMsg");
 
-      // Build absolute URL for share
       const pageUrlEl = document.getElementById("pageUrl");
       const pageAbs = window.location.origin + "/p/" + slug;
       pageUrlEl.textContent = pageAbs;
@@ -438,30 +448,28 @@
         btn.classList.add("active");
         selectedAmount = parseInt(btn.getAttribute("data-amount") || "0", 10) || 0;
         selectedLabel = btn.getAttribute("data-label") || "Pago";
-        // Update main CTA label
-        if (selectedAmount > 0){
-          payNowBtn.textContent = "💳 Pagar ahora (" + selectedAmount + "$)";
-        } else {
-          payNowBtn.textContent = "💳 Pagar ahora";
+        if (payNowBtn){
+          payNowBtn.textContent = selectedAmount > 0 ? ("💳 Pagar ahora (" + selectedAmount + "$)") : "💳 Pagar ahora";
         }
       }
 
-      // Init: select the active one or first
       const initActive = amountButtons.find(b => b.classList.contains("active")) || amountButtons[0];
       if (initActive) selectBtn(initActive);
 
-      amountButtons.forEach(btn => {
-        btn.addEventListener("click", () => selectBtn(btn));
-      });
+      amountButtons.forEach(btn => btn.addEventListener("click", () => selectBtn(btn)));
 
       async function createCheckout(amount){
+        if (!stripeConnected){
+          showMsg("Primero conectá Stripe para poder cobrar.", "warn");
+          return;
+        }
         if (!amount || amount <= 0){
           showMsg("Elegí un monto válido.", "warn");
           return;
         }
 
-        payNowBtn.disabled = true;
-        createLinkBtn.disabled = true;
+        payNowBtn && (payNowBtn.disabled = true);
+        createLinkBtn && (createLinkBtn.disabled = true);
         showMsg("Creando link de pago…", "");
 
         try{
@@ -487,36 +495,36 @@
           window.location.href = data.url;
 
         } catch(e){
-          showMsg("Error: no se pudo crear el pago. " +
-                  "Si todavía no conectaste Stripe, volvé a conectar tu cuenta. " +
-                  "(" + (e && e.message ? e.message : "error") + ")",
-                  "danger");
+          showMsg("Error: no se pudo crear el pago. (" + (e && e.message ? e.message : "error") + ")", "danger");
         } finally {
-          payNowBtn.disabled = false;
-          createLinkBtn.disabled = false;
+          payNowBtn && (payNowBtn.disabled = false);
+          createLinkBtn && (createLinkBtn.disabled = false);
         }
       }
 
-      payNowBtn.addEventListener("click", () => {
-        // If custom amount is filled, prioritize it
-        const custom = parseInt((customAmount.value || "").trim(), 10);
-        if (custom && custom > 0){
-          selectedLabel = "Monto personalizado";
-          createCheckout(custom);
-          return;
-        }
-        createCheckout(selectedAmount);
-      });
+      if (payNowBtn){
+        payNowBtn.addEventListener("click", () => {
+          const custom = parseInt((customAmount.value || "").trim(), 10);
+          if (custom && custom > 0){
+            selectedLabel = "Monto personalizado";
+            createCheckout(custom);
+            return;
+          }
+          createCheckout(selectedAmount);
+        });
+      }
 
-      createLinkBtn.addEventListener("click", () => {
-        const val = parseInt((customAmount.value || "").trim(), 10);
-        if (!val || val <= 0){
-          showMsg("Ingresá un monto (ej: 120) y luego “Crear link”.", "warn");
-          return;
-        }
-        selectedLabel = "Monto personalizado";
-        createCheckout(val);
-      });
+      if (createLinkBtn){
+        createLinkBtn.addEventListener("click", () => {
+          const val = parseInt((customAmount.value || "").trim(), 10);
+          if (!val || val <= 0){
+            showMsg("Ingresá un monto (ej: 120) y luego “Crear link”.", "warn");
+            return;
+          }
+          selectedLabel = "Monto personalizado";
+          createCheckout(val);
+        });
+      }
 
       copyBtn.addEventListener("click", async () => {
         try{
@@ -527,7 +535,6 @@
         }
       });
 
-      // mailto message
       const mailSubject = encodeURIComponent("Link de pago (PayLink)");
       const mailBody = encodeURIComponent(
         "Hola, te paso el link para pagar con tarjeta (Stripe).\\n\\n" +
