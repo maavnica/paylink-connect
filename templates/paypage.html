@@ -1,551 +1,384 @@
-<!doctype html>
-<html lang="es">
-<head>
-  <meta charset="utf-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1" />
-  <title>PayLink — {{ merchant.business_name }}</title>
+import os
+import re
+import sqlite3
+from datetime import datetime
+from typing import Optional, Any, Dict
+from urllib.parse import quote_plus
 
-  <meta name="theme-color" content="#070B14" />
-  <meta name="description" content="Cobrá en segundos con tarjeta desde WhatsApp. Pagos seguros con Stripe. Comprobante automático." />
+from fastapi import FastAPI, Request, Form, HTTPException
+from fastapi.responses import HTMLResponse, RedirectResponse, JSONResponse
+from fastapi.staticfiles import StaticFiles
+from fastapi.templating import Jinja2Templates
+from pydantic import BaseModel, Field
 
-  <style>
-    :root{
-      --bg:#070B14;
-      --card:rgba(255,255,255,.08);
-      --card2:rgba(255,255,255,.05);
-      --text:rgba(255,255,255,.92);
-      --muted:rgba(255,255,255,.72);
-      --line:rgba(255,255,255,.12);
-      --shadow:0 18px 55px rgba(0,0,0,.55);
-      --radius:22px;
+import stripe
 
-      --green:#22c55e;
-      --green2:#16a34a;
-      --blue:#2DB2FF;
-      --blue2:#1f8fd1;
-      --danger:#ef4444;
+# ============================================================
+# CONFIG
+# ============================================================
 
-      --max:1100px;
-    }
-    *{box-sizing:border-box}
-    body{
-      margin:0;
-      font-family: system-ui,-apple-system,Segoe UI,Roboto,Helvetica,Arial;
-      min-height:100vh;
-      color:var(--text);
-      background:
-        radial-gradient(900px 600px at 15% 15%, rgba(34,197,94,.20), transparent 60%),
-        radial-gradient(900px 600px at 85% 10%, rgba(45,178,255,.18), transparent 60%),
-        var(--bg);
-    }
-    a{color:inherit}
-    .wrap{max-width:var(--max);margin:0 auto;padding:22px 18px 64px;}
+PROJECT_ROOT = os.path.dirname(os.path.abspath(__file__))
+PROJECT_ROOT = os.path.dirname(PROJECT_ROOT)  # go up from /app to project root
 
-    .topbar{
-      display:flex;justify-content:space-between;align-items:center;gap:12px;flex-wrap:wrap;
-      margin-bottom:16px;
-    }
-    .brand{
-      display:flex;align-items:center;gap:10px;text-decoration:none;
-    }
-    .logo{
-      width:40px;height:40px;border-radius:14px;
-      background:linear-gradient(135deg,rgba(34,197,94,.95),rgba(45,178,255,.75));
-      box-shadow:0 16px 40px rgba(34,197,94,.16);
-    }
-    .brand h1{
-      margin:0;font-size:14px;letter-spacing:.22em;text-transform:uppercase;
-    }
-    .brand p{margin:0;color:var(--muted);font-size:13px;}
+DB_PATH = os.path.join(PROJECT_ROOT, "db", "paylink.db")
+TEMPLATES_DIR = os.path.join(PROJECT_ROOT, "templates")
+STATIC_DIR = os.path.join(PROJECT_ROOT, "static")
 
-    .grid{
-      display:grid;
-      grid-template-columns: 1.05fr .95fr;
-      gap:14px;
-      align-items:start;
-    }
-    @media(max-width:980px){
-      .grid{grid-template-columns:1fr}
-    }
+BASE_URL = os.getenv("BASE_URL", "http://127.0.0.1:8000").rstrip("/")
+APP_ENV = os.getenv("APP_ENV", "dev")
 
-    .card{
-      background:linear-gradient(180deg,var(--card),var(--card2));
-      border:1px solid var(--line);
-      border-radius:var(--radius);
-      box-shadow:var(--shadow);
-      padding:18px;
-      overflow:hidden;
-    }
+SECRET_KEY = os.getenv("SECRET_KEY", "dev_secret_change_me")
 
-    .hero{
-      padding:16px;
-      border-radius:18px;
-      border:1px solid var(--line);
-      background:rgba(0,0,0,.22);
-    }
-    .heroTitle{
-      margin:0 0 8px;
-      font-size:22px;
-      line-height:1.15;
-      letter-spacing:-.01em;
-    }
-    .heroSub{
-      margin:0;
-      color:var(--muted);
-      font-size:14px;
-      line-height:1.45;
-    }
+STRIPE_SECRET_KEY = os.getenv("STRIPE_SECRET_KEY", "")
+STRIPE_WEBHOOK_SECRET = os.getenv("STRIPE_WEBHOOK_SECRET", "")
+STRIPE_CONNECT_RETURN_URL = os.getenv("STRIPE_CONNECT_RETURN_URL", f"{BASE_URL}/stripe/connect/return")
+STRIPE_CONNECT_REFRESH_URL = os.getenv("STRIPE_CONNECT_REFRESH_URL", f"{BASE_URL}/stripe/connect/refresh")
 
-    .chips{display:flex;flex-wrap:wrap;gap:10px;margin-top:12px;}
-    .chip{
-      display:inline-flex;align-items:center;gap:8px;
-      padding:8px 12px;border-radius:999px;
-      border:1px solid var(--line);
-      background:rgba(255,255,255,.03);
-      color:rgba(255,255,255,.80);
-      font-weight:900;
-      font-size:12.5px;
-      white-space:nowrap;
-    }
-    .chip.ok{border-color:rgba(34,197,94,.35); background:rgba(34,197,94,.10)}
-    .chip.bad{border-color:rgba(239,68,68,.35); background:rgba(239,68,68,.10)}
+PAYLINK_SUBSCRIBE_URL = os.getenv("PAYLINK_SUBSCRIBE_URL", "").strip()
 
-    .ctaRow{display:flex;flex-wrap:wrap;gap:12px;align-items:center;margin-top:14px;}
-    .btn{
-      display:inline-flex;align-items:center;justify-content:center;gap:8px;
-      padding:13px 14px;border-radius:16px;
-      text-decoration:none;font-weight:900;
-      border:1px solid var(--line);
-      background:rgba(255,255,255,.03);
-      color:var(--text);
-      cursor:pointer;
-      white-space:nowrap;
-      user-select:none;
-    }
-    .btnGreen{
-      background:linear-gradient(135deg,var(--green),var(--green2));
-      color:#06110a;border:none;
-      box-shadow:0 18px 45px rgba(34,197,94,.20);
-      min-width: 220px;
-    }
-    .btnBlue{
-      background:linear-gradient(135deg,var(--blue),var(--blue2));
-      color:#061625;border:none;
-      box-shadow:0 18px 45px rgba(45,178,255,.16);
-      min-width: 220px;
-    }
-    .btnDanger{
-      background:linear-gradient(135deg,rgba(239,68,68,.95),rgba(239,68,68,.70));
-      color:#140606;border:none;
-      box-shadow:0 18px 45px rgba(239,68,68,.18);
-      min-width: 220px;
-    }
-    .btnSmall{
-      padding:10px 12px;border-radius:14px;font-size:13px;
-    }
+# ============================================================
+# APP
+# ============================================================
 
-    .sectionTitle{
-      margin:14px 0 10px;
-      font-size:14px;
-      font-weight:900;
-      color:rgba(255,255,255,.86);
-      letter-spacing:.2px;
-    }
+app = FastAPI(title="PayLink Connect")
 
-    .amountGrid{
-      display:grid;
-      grid-template-columns: 1fr 1fr 1fr;
-      gap:10px;
-    }
-    @media(max-width:520px){
-      .amountGrid{grid-template-columns:1fr}
-    }
-    .amountBtn{
-      padding:14px 12px;
-      border-radius:16px;
-      border:1px solid var(--line);
-      background:rgba(255,255,255,.03);
-      cursor:pointer;
-      text-align:center;
-      font-weight:900;
-      color:rgba(255,255,255,.90);
-      transition: transform .05s ease;
-    }
-    .amountBtn:active{transform:scale(.99)}
-    .amountBtn small{
-      display:block;
-      margin-top:6px;
-      font-weight:700;
-      color:var(--muted);
-      font-size:12px;
-    }
-    .amountBtn.active{
-      border-color:rgba(34,197,94,.45);
-      background:rgba(34,197,94,.10);
-      box-shadow:0 12px 30px rgba(34,197,94,.08);
-    }
+if os.path.isdir(STATIC_DIR):
+    app.mount("/static", StaticFiles(directory=STATIC_DIR), name="static")
 
-    .inputRow{
-      margin-top:10px;
-      display:flex;
-      gap:10px;
-      flex-wrap:wrap;
-      align-items:center;
-    }
-    .input{
-      flex:1 1 260px;
-      padding:12px 12px;
-      border-radius:14px;
-      border:1px solid var(--line);
-      background:rgba(0,0,0,.20);
-      color:var(--text);
-      outline:none;
-      font-size:14px;
-    }
-    .input:focus{
-      border-color:rgba(45,178,255,.45);
-      box-shadow:0 0 0 3px rgba(45,178,255,.15);
-    }
+templates = Jinja2Templates(directory=TEMPLATES_DIR)
 
-    .msg{
-      margin-top:12px;
-      padding:12px 14px;
-      border-radius:16px;
-      border:1px solid rgba(45,178,255,.25);
-      background:rgba(45,178,255,.08);
-      color:rgba(255,255,255,.82);
-      font-size:13px;
-      line-height:1.4;
-    }
-    .msg.ok{border-color:rgba(34,197,94,.28); background:rgba(34,197,94,.08);}
-    .msg.warn{border-color:rgba(245,158,11,.28); background:rgba(245,158,11,.08);}
-    .msg.danger{border-color:rgba(239,68,68,.28); background:rgba(239,68,68,.08);}
+# ============================================================
+# DB helpers
+# ============================================================
 
-    .rightCardTitle{
-      margin:0 0 10px;
-      font-size:14px;
-      font-weight:900;
-      color:rgba(255,255,255,.86);
-      letter-spacing:.2px;
-    }
-    .steps{display:grid;gap:10px;}
-    .step{
-      border:1px solid var(--line);
-      border-radius:16px;
-      padding:12px;
-      background:rgba(255,255,255,.03);
-      color:var(--muted);
-      font-size:13px;
-      line-height:1.35;
-    }
-    .step b{color:rgba(255,255,255,.90)}
-    .kpiRow{
-      margin-top:10px;
-      display:flex;
-      flex-wrap:wrap;
-      gap:10px;
-      align-items:center;
-    }
-    .pill{
-      display:inline-flex;align-items:center;gap:8px;
-      padding:8px 10px;border-radius:999px;
-      border:1px solid rgba(255,255,255,.14);
-      background:rgba(0,0,0,.18);
-      color:rgba(255,255,255,.82);
-      font-weight:900;
-      font-size:12px;
-      white-space:nowrap;
-    }
+def db():
+    os.makedirs(os.path.dirname(DB_PATH), exist_ok=True)
+    conn = sqlite3.connect(DB_PATH)
+    conn.row_factory = sqlite3.Row
+    return conn
 
-    .shareRow{
-      display:flex;gap:10px;flex-wrap:wrap;align-items:center;margin-top:10px;
-    }
-    .miniLink{
-      flex:1 1 260px;
-      padding:12px 12px;
-      border-radius:14px;
-      border:1px solid var(--line);
-      background:rgba(0,0,0,.20);
-      color:rgba(255,255,255,.85);
-      font-size:13px;
-      overflow:hidden;
-      text-overflow:ellipsis;
-      white-space:nowrap;
-    }
+def init_db():
+    with db() as conn:
+        conn.execute(
+            """
+            CREATE TABLE IF NOT EXISTS merchants (
+              id INTEGER PRIMARY KEY AUTOINCREMENT,
+              slug TEXT UNIQUE NOT NULL,
+              business_name TEXT NOT NULL,
+              contact_name TEXT,
+              whatsapp TEXT,
+              country TEXT,
+              currency TEXT,
+              amount1 INTEGER DEFAULT 25,
+              amount2 INTEGER DEFAULT 49,
+              amount3 INTEGER DEFAULT 79,
+              stripe_account_id TEXT,
+              stripe_onboarding_complete INTEGER DEFAULT 0,
+              created_at TEXT
+            );
+            """
+        )
+        conn.execute("CREATE INDEX IF NOT EXISTS idx_merchants_slug ON merchants(slug);")
 
-    .foot{
-      margin-top:14px;
-      color:var(--muted);
-      font-size:12px;
-      line-height:1.35;
-    }
-    .foot a{
-      color:rgba(255,255,255,.78);
-      text-decoration:none;
-      border-bottom:1px dashed rgba(255,255,255,.25);
-    }
-    .foot a:hover{color:var(--text)}
-  </style>
-</head>
+init_db()
 
-<body>
-  <div class="wrap">
+def slugify(s: str) -> str:
+    s = s.strip().lower()
+    s = re.sub(r"[^\w\s-]", "", s, flags=re.UNICODE)
+    s = re.sub(r"[\s_-]+", "-", s, flags=re.UNICODE)
+    s = re.sub(r"^-+|-+$", "", s)
+    return s or "merchant"
 
-    <div class="topbar">
-      <a class="brand" href="/">
-        <div class="logo"></div>
-        <div>
-          <h1>MAAVNICA</h1>
-          <p>PayLink — Pago seguro (Stripe)</p>
-        </div>
-      </a>
-      <a class="btn btnSmall" href="/demo/carlos">🔥 Ver demo</a>
-    </div>
+def unique_slug(base: str) -> str:
+    base = slugify(base)
+    slug = base
+    i = 2
+    with db() as conn:
+        while conn.execute("SELECT 1 FROM merchants WHERE slug=?", (slug,)).fetchone():
+            slug = f"{base}-{i}"
+            i += 1
+    return slug
 
-    <div class="grid">
+def get_merchant_by_id(merchant_id: int):
+    with db() as conn:
+        return conn.execute("SELECT * FROM merchants WHERE id=?", (merchant_id,)).fetchone()
 
-      <div class="card">
-        <div class="hero">
-          <h2 class="heroTitle">{{ merchant.business_name }}</h2>
-          <p class="heroSub">
-            Cobrá <b>en 10 segundos</b> desde WhatsApp.
-            Simple. Pro. Sin vueltas.
-            <br/><b>Sin efectivo. Sin transferencias. Sin complicaciones.</b>
-          </p>
+def get_merchant_by_slug(slug: str):
+    with db() as conn:
+        return conn.execute("SELECT * FROM merchants WHERE slug=?", (slug,)).fetchone()
 
-          <div class="chips">
-            <span class="chip">🇳🇮 {{ merchant.country or "NI" }}</span>
-            <span class="chip">🔒 Pago seguro</span>
-            <span class="chip">💳 Pago con tarjeta</span>
-            <span class="chip">⚡ Comprobante instantáneo</span>
-            <span class="chip">🌍 Tarjetas locales e internacionales</span>
-            <span class="chip">📲 Apple Pay / Google Pay</span>
+def norm_whatsapp(w: str) -> str:
+    w = (w or "").strip()
+    w = re.sub(r"[^\d+]", "", w)
+    if w.startswith("00"):
+        w = "+" + w[2:]
+    if not w.startswith("+") and w.isdigit():
+        # keep digits; some LATAM users type without +
+        pass
+    return w
 
-            {% if merchant.stripe_account_id %}
-              <span class="chip ok">✅ Stripe conectado</span>
-            {% else %}
-              <span class="chip bad">⛔ Stripe no conectado</span>
-            {% endif %}
-          </div>
-        </div>
+def require_stripe_config():
+    if not STRIPE_SECRET_KEY:
+        raise HTTPException(500, "Stripe not configured (STRIPE_SECRET_KEY missing)")
+    stripe.api_key = STRIPE_SECRET_KEY
 
-        {% if success == "1" %}
-          <div class="msg ok">✅ Pago realizado. ¡Gracias! Si querés, avisá por WhatsApp para confirmar el servicio.</div>
-        {% elif success == "0" %}
-          <div class="msg warn">⚠️ Pago cancelado. Podés intentarlo de nuevo cuando quieras.</div>
-        {% endif %}
+# ============================================================
+# PAGES
+# ============================================================
 
-        <div class="ctaRow">
-          <a class="btn btnBlue" href="{{ whatsapp_url }}" target="_blank" rel="noopener">💬 Escribir por WhatsApp</a>
+@app.get("/", response_class=HTMLResponse)
+def landing(request: Request):
+    return templates.TemplateResponse(
+        "landing.html",
+        {
+            "request": request,
+            "base_url": BASE_URL,
+            "subscribe_url": PAYLINK_SUBSCRIBE_URL,
+        },
+    )
 
-          {% if merchant.stripe_account_id %}
-            <button class="btn btnGreen" id="payNowBtn">💳 Pagar ahora</button>
-          {% else %}
-            <a class="btn btnDanger" href="/connect/{{ merchant.id }}">🔌 Conectar Stripe para cobrar</a>
-          {% endif %}
-        </div>
+@app.post("/start")
+def start_create(
+    business_name: str = Form(...),
+    contact_name: str = Form(""),
+    whatsapp: str = Form(""),
+    country: str = Form("NI"),
+    currency: str = Form("USD"),
+    amount1: int = Form(25),
+    amount2: int = Form(49),
+    amount3: int = Form(79),
+):
+    business_name = (business_name or "").strip()
+    if len(business_name) < 2:
+        raise HTTPException(400, "business_name is required")
 
-        <div class="sectionTitle">Pago rápido</div>
+    slug = unique_slug(business_name)
+    whatsapp_norm = norm_whatsapp(whatsapp)
 
-        <div class="amountGrid">
-          <button class="amountBtn" data-amount="{{ merchant.amount1 or 25 }}" data-label="Consulta / Diagnóstico">
-            <span>{{ merchant.amount1 or 25 }}{{ "$" }}</span>
-            <small>Consulta / Diagnóstico</small>
-          </button>
-          <button class="amountBtn active" data-amount="{{ merchant.amount2 or 49 }}" data-label="Seña / Servicio express">
-            <span>{{ merchant.amount2 or 49 }}{{ "$" }}</span>
-            <small>Seña / Servicio express</small>
-          </button>
-          <button class="amountBtn" data-amount="{{ merchant.amount3 or 79 }}" data-label="Servicio + repuestos">
-            <span>{{ merchant.amount3 or 79 }}{{ "$" }}</span>
-            <small>Servicio + repuestos</small>
-          </button>
-        </div>
+    with db() as conn:
+        cur = conn.execute(
+            """
+            INSERT INTO merchants(slug,business_name,contact_name,whatsapp,country,currency,amount1,amount2,amount3,created_at)
+            VALUES(?,?,?,?,?,?,?,?,?,?)
+            """,
+            (
+                slug,
+                business_name.strip(),
+                (contact_name or "").strip(),
+                whatsapp_norm,
+                (country or "").strip().upper()[:2],
+                (currency or "USD").strip().upper()[:3],
+                int(amount1),
+                int(amount2),
+                int(amount3),
+                datetime.utcnow().isoformat(),
+            ),
+        )
+        merchant_id = cur.lastrowid
 
-        <div class="inputRow">
-          <input class="input" id="customAmount" type="number" min="1" placeholder="Otro monto ({{ merchant.currency or "USD" }}) ej: 120" />
-          {% if merchant.stripe_account_id %}
-            <button class="btn btnSmall" id="createLinkBtn">Crear link</button>
-          {% else %}
-            <a class="btn btnSmall" href="/connect/{{ merchant.id }}">Conectar primero</a>
-          {% endif %}
-        </div>
+    return RedirectResponse(url=f"/connect/{merchant_id}", status_code=303)
 
-        <div class="msg" id="statusMsg" style="display:none;"></div>
+# --- IMPORTANT: typed int route so it doesn't conflict with /connect/{slug}
+@app.get("/connect/{merchant_id:int}", response_class=HTMLResponse)
+def connect_page(request: Request, merchant_id: int):
+    m = get_merchant_by_id(merchant_id)
+    if not m:
+        raise HTTPException(404, "Merchant not found")
 
-        <div class="sectionTitle">Compartir por SMS o email (también funciona)</div>
-        <div class="shareRow">
-          <div class="miniLink" id="pageUrl">/p/{{ merchant.slug }}</div>
-          <button class="btn btnSmall" id="copyBtn">📋 Copiar link</button>
-          <a class="btn btnSmall" id="mailBtn" href="#" rel="noopener">✉️ Email</a>
-        </div>
+    return templates.TemplateResponse(
+        "connect.html",
+        {
+            "request": request,
+            "merchant": dict(m),
+            "base_url": BASE_URL,
+        },
+    )
 
-        <div class="foot">
-          🔐 Pagos procesados por Stripe. Maavnica es proveedor técnico (no es banco).<br/>
-          Al continuar, aceptás los <a href="/cgv-paylink" target="_blank">Términos</a> y el <a href="/mentions-legales" target="_blank">Aviso legal</a>.
-        </div>
-      </div>
+# ✅ NEW: connect page by slug (stable in prod)
+@app.get("/connect/{slug}", response_class=HTMLResponse)
+def connect_page_by_slug(request: Request, slug: str):
+    m = get_merchant_by_slug(slug)
+    if not m:
+        raise HTTPException(404, "Merchant not found")
 
-      <div class="card">
-        <div class="rightCardTitle">¿Por qué es “WOW”?</div>
+    return templates.TemplateResponse(
+        "connect.html",
+        {
+            "request": request,
+            "merchant": dict(m),
+            "base_url": BASE_URL,
+        },
+    )
 
-        <div class="steps">
-          <div class="step"><b>1) El cliente te escribe por WhatsApp</b><br/>Conversación normal. Cero fricción.</div>
-          <div class="step"><b>2) Le enviás un PayLink</b><br/>Un link único, listo para pagar (WhatsApp / SMS / email).</div>
-          <div class="step"><b>3) El pago es inmediato</b><br/>Tarjeta bancaria. Comprobante. Listo.</div>
-        </div>
+# ============================================================
+# DEMO
+# ============================================================
 
-        <div class="kpiRow">
-          <span class="pill">⚡ Funciona desde el celular</span>
-          <span class="pill">🧾 Comprobante automático</span>
-          <span class="pill">🌍 Tarjetas locales/internacionales</span>
-          <span class="pill">🔒 Stripe (seguro)</span>
-        </div>
+@app.get("/demo/carlos")
+def demo_carlos():
+    return RedirectResponse(url="/p/carlos", status_code=302)
 
-        <div class="msg" style="margin-top:12px;">
-          Ideal para <b>servicios</b>, <b>señas</b>, <b>urgencias</b>, <b>artesanos</b> y <b>pequeños negocios</b>.
-        </div>
+# ============================================================
+# STRIPE CONNECT (EXPRESS via Account Links) ✅
+# ============================================================
 
-        <div class="msg" style="margin-top:12px;">
-          Tip: cuando el cliente duda, mandale el link y decile:<br/>
-          <b>“Pagás con tarjeta y te envío el comprobante en el momento.”</b>
-        </div>
-      </div>
+@app.get("/stripe/connect/start")
+def stripe_connect_start(merchant_id: Optional[int] = None, slug: Optional[str] = None):
+    """
+    Supports:
+      - /stripe/connect/start?merchant_id=123
+      - /stripe/connect/start?slug=carlos
+    """
+    require_stripe_config()
 
-    </div>
-  </div>
+    m = None
+    if merchant_id is not None:
+        m = get_merchant_by_id(int(merchant_id))
+    elif slug:
+        m = get_merchant_by_slug(slug.strip())
+    else:
+        raise HTTPException(400, "Missing merchant_id or slug")
 
-  <script>
-    (function(){
-      const slug = "{{ merchant.slug }}";
-      const currency = "{{ (merchant.currency or 'USD')|lower }}";
-      const stripeConnected = {{ "true" if merchant.stripe_account_id else "false" }};
+    if not m:
+        raise HTTPException(404, "Merchant not found")
 
-      const amountButtons = Array.from(document.querySelectorAll(".amountBtn"));
-      const payNowBtn = document.getElementById("payNowBtn");
-      const createLinkBtn = document.getElementById("createLinkBtn");
-      const customAmount = document.getElementById("customAmount");
-      const statusMsg = document.getElementById("statusMsg");
+    merchant_id = int(m["id"])
+    acct_id = m["stripe_account_id"]
 
-      const pageUrlEl = document.getElementById("pageUrl");
-      const pageAbs = window.location.origin + "/p/" + slug;
-      pageUrlEl.textContent = pageAbs;
+    if not acct_id:
+        acct = stripe.Account.create(
+            type="express",
+            country=(m["country"] or None),
+            business_profile={
+                "name": m["business_name"],
+                "url": f"{BASE_URL}/p/{m['slug']}",
+            },
+            capabilities={
+                "card_payments": {"requested": True},
+                "transfers": {"requested": True},
+            },
+        )
+        acct_id = acct["id"]
+        with db() as conn:
+            conn.execute("UPDATE merchants SET stripe_account_id=? WHERE id=?", (acct_id, merchant_id))
 
-      const copyBtn = document.getElementById("copyBtn");
-      const mailBtn = document.getElementById("mailBtn");
+    refresh_url = f"{STRIPE_CONNECT_REFRESH_URL}?merchant_id={merchant_id}"
+    return_url = f"{STRIPE_CONNECT_RETURN_URL}?merchant_id={merchant_id}"
 
-      let selectedAmount = null;
-      let selectedLabel = null;
+    link = stripe.AccountLink.create(
+        account=acct_id,
+        refresh_url=refresh_url,
+        return_url=return_url,
+        type="account_onboarding",
+    )
+    return RedirectResponse(url=link["url"], status_code=303)
 
-      function showMsg(text, kind){
-        statusMsg.style.display = "block";
-        statusMsg.className = "msg" + (kind ? (" " + kind) : "");
-        statusMsg.textContent = text;
-      }
+@app.get("/stripe/connect/refresh")
+def stripe_connect_refresh(merchant_id: int):
+    return RedirectResponse(url=f"/stripe/connect/start?merchant_id={merchant_id}", status_code=303)
 
-      function selectBtn(btn){
-        amountButtons.forEach(b => b.classList.remove("active"));
-        btn.classList.add("active");
-        selectedAmount = parseInt(btn.getAttribute("data-amount") || "0", 10) || 0;
-        selectedLabel = btn.getAttribute("data-label") || "Pago";
-        if (payNowBtn){
-          payNowBtn.textContent = selectedAmount > 0 ? ("💳 Pagar ahora (" + selectedAmount + "$)") : "💳 Pagar ahora";
-        }
-      }
+@app.get("/stripe/connect/return", response_class=HTMLResponse)
+def stripe_connect_return(request: Request, merchant_id: int):
+    require_stripe_config()
 
-      const initActive = amountButtons.find(b => b.classList.contains("active")) || amountButtons[0];
-      if (initActive) selectBtn(initActive);
+    m = get_merchant_by_id(merchant_id)
+    if not m:
+        raise HTTPException(404, "Merchant not found")
 
-      amountButtons.forEach(btn => btn.addEventListener("click", () => selectBtn(btn)));
+    acct_id = m["stripe_account_id"]
+    if not acct_id:
+        raise HTTPException(400, "No connected account")
 
-      async function createCheckout(amount){
-        if (!stripeConnected){
-          showMsg("Primero conectá Stripe para poder cobrar.", "warn");
-          return;
-        }
-        if (!amount || amount <= 0){
-          showMsg("Elegí un monto válido.", "warn");
-          return;
-        }
+    acct = stripe.Account.retrieve(acct_id)
+    complete = bool(acct.get("charges_enabled")) and bool(acct.get("payouts_enabled"))
 
-        payNowBtn && (payNowBtn.disabled = true);
-        createLinkBtn && (createLinkBtn.disabled = true);
-        showMsg("Creando link de pago…", "");
+    with db() as conn:
+        conn.execute(
+            "UPDATE merchants SET stripe_onboarding_complete=? WHERE id=?",
+            (1 if complete else 0, merchant_id),
+        )
 
-        try{
-          const res = await fetch("/api/create-checkout-session", {
-            method: "POST",
-            headers: {"Content-Type":"application/json"},
-            body: JSON.stringify({
-              slug: slug,
-              amount: amount,
-              currency: currency,
-              title: selectedLabel ? ("PayLink — " + selectedLabel) : "Pago (PayLink)",
-              description: "Pago seguro con tarjeta (Stripe)"
-            })
-          });
+    m2 = get_merchant_by_id(merchant_id)
 
-          if (!res.ok){
-            const txt = await res.text();
-            throw new Error(txt || ("HTTP " + res.status));
-          }
+    return templates.TemplateResponse(
+        "connected.html",
+        {
+            "request": request,
+            "merchant": dict(m2),
+            "complete": complete,
+            "paypage_url": f"{BASE_URL}/p/{m2['slug']}",
+        },
+    )
 
-          const data = await res.json();
-          if (!data.url) throw new Error("No se recibió la URL de Stripe.");
-          window.location.href = data.url;
+# ============================================================
+# PAYPAGE
+# ============================================================
 
-        } catch(e){
-          showMsg("Error: no se pudo crear el pago. (" + (e && e.message ? e.message : "error") + ")", "danger");
-        } finally {
-          payNowBtn && (payNowBtn.disabled = false);
-          createLinkBtn && (createLinkBtn.disabled = false);
-        }
-      }
+@app.get("/p/{slug}", response_class=HTMLResponse)
+def paypage(request: Request, slug: str):
+    m = get_merchant_by_slug(slug)
+    if not m:
+        raise HTTPException(404, "Not Found")
 
-      if (payNowBtn){
-        payNowBtn.addEventListener("click", () => {
-          const custom = parseInt((customAmount.value || "").trim(), 10);
-          if (custom && custom > 0){
-            selectedLabel = "Monto personalizado";
-            createCheckout(custom);
-            return;
-          }
-          createCheckout(selectedAmount);
-        });
-      }
+    data = dict(m)
+    data["stripe_connected"] = bool(data.get("stripe_account_id"))
+    data["onboarding_complete"] = bool(data.get("stripe_onboarding_complete"))
 
-      if (createLinkBtn){
-        createLinkBtn.addEventListener("click", () => {
-          const val = parseInt((customAmount.value || "").trim(), 10);
-          if (!val || val <= 0){
-            showMsg("Ingresá un monto (ej: 120) y luego “Crear link”.", "warn");
-            return;
-          }
-          selectedLabel = "Monto personalizado";
-          createCheckout(val);
-        });
-      }
+    return templates.TemplateResponse(
+        "paypage.html",
+        {
+            "request": request,
+            "merchant": data,
+            "base_url": BASE_URL,
+        },
+    )
 
-      copyBtn.addEventListener("click", async () => {
-        try{
-          await navigator.clipboard.writeText(pageAbs);
-          showMsg("✅ Link copiado. Pegalo en WhatsApp / SMS / email.", "ok");
-        } catch(e){
-          showMsg("Copiado manual: " + pageAbs, "warn");
-        }
-      });
+# ============================================================
+# CREATE PAYMENT (Checkout Session) — placeholder kept as-is
+# (Your template JS should call this route if it exists in your project.)
+# ============================================================
 
-      const mailSubject = encodeURIComponent("Link de pago (PayLink)");
-      const mailBody = encodeURIComponent(
-        "Hola, te paso el link para pagar con tarjeta (Stripe).\\n\\n" +
-        pageAbs + "\\n\\n" +
-        "Gracias."
-      );
-      mailBtn.href = "mailto:?subject=" + mailSubject + "&body=" + mailBody;
+class PayReq(BaseModel):
+    slug: str = Field(...)
+    amount: int = Field(..., ge=1)
+    currency: str = Field(default="USD")
 
-    })();
-  </script>
-</body>
-</html>
+@app.post("/api/create-checkout")
+def api_create_checkout(payload: PayReq):
+    # NOTE: This is kept minimal, you can expand later.
+    require_stripe_config()
+
+    m = get_merchant_by_slug(payload.slug.strip())
+    if not m:
+        raise HTTPException(404, "Merchant not found")
+
+    acct_id = m["stripe_account_id"]
+    if not acct_id:
+        raise HTTPException(400, "Merchant has not connected Stripe yet")
+
+    # Simple Checkout Session on connected account
+    session = stripe.checkout.Session.create(
+        mode="payment",
+        success_url=f"{BASE_URL}/success?slug={quote_plus(payload.slug)}",
+        cancel_url=f"{BASE_URL}/p/{quote_plus(payload.slug)}",
+        line_items=[
+            {
+                "price_data": {
+                    "currency": (payload.currency or "USD").lower(),
+                    "product_data": {"name": f"Pago — {m['business_name']}"},
+                    "unit_amount": int(payload.amount) * 100,
+                },
+                "quantity": 1,
+            }
+        ],
+        payment_intent_data={
+            "transfer_data": {"destination": acct_id},
+        },
+    )
+    return {"url": session["url"]}
+
+@app.get("/success", response_class=HTMLResponse)
+def success_page(request: Request, slug: str = ""):
+    return templates.TemplateResponse("success.html", {"request": request, "slug": slug})
 
 
