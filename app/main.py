@@ -137,6 +137,31 @@ def landing(request: Request):
         },
     )
 
+@app.get("/start", response_class=HTMLResponse)
+def start_form(request: Request):
+    """Form to create a PayLink page (merchant)."""
+    return templates.TemplateResponse(
+        "start.html",
+        {
+            "request": request,
+            "base_url": BASE_URL,
+        },
+    )
+
+
+@app.get("/mentions-legales", response_class=HTMLResponse)
+def mentions_legales(request: Request):
+    return templates.TemplateResponse("mentions-legales.html", {"request": request, "base_url": BASE_URL})
+
+@app.get("/cgv", response_class=HTMLResponse)
+def cgv(request: Request):
+    return templates.TemplateResponse("cgv-paylink.html", {"request": request, "base_url": BASE_URL})
+
+@app.get("/contact", response_class=HTMLResponse)
+def contact(request: Request):
+    return templates.TemplateResponse("contact.html", {"request": request, "base_url": BASE_URL})
+
+
 @app.post("/start")
 def start_create(
     business_name: str = Form(...),
