@@ -2,95 +2,120 @@
 <html lang="es">
 <head>
   <meta charset="utf-8" />
-  <meta name="viewport" content="width=device-width,initial-scale=1" />
-  <title>{{ merchant.business_name }} · PayLink</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Pagar a {{ merchant.business_name }}</title>
   <style>
     :root{
-      --bg:#050a13; --panel:#0b1322; --card:#0f1c33;
-      --txt:#e8eefc; --mut:#a9b7d4; --line:rgba(255,255,255,.08);
-      --brand:#3bd4a5; --brand2:#2aa9ff; --warn:#ffcc66; --danger:#ff6b6b;
-      --r:18px;
+      --bg:#070B14;
+      --card:rgba(255,255,255,.08);
+      --card2:rgba(255,255,255,.05);
+      --text:rgba(255,255,255,.92);
+      --muted:rgba(255,255,255,.70);
+      --line:rgba(255,255,255,.12);
+      --warn:#f59e0b;
+      --ok:#22c55e;
+      --blue:#2DB2FF;
+      --shadow:0 18px 55px rgba(0,0,0,.55);
+      --radius:22px;
+      --max:1040px;
     }
     *{box-sizing:border-box}
     body{
-      margin:0; font-family: system-ui, -apple-system, Segoe UI, Roboto, Arial;
-      background: radial-gradient(1000px 700px at 15% 10%, rgba(43,220,165,.18), transparent 60%),
-                  radial-gradient(900px 650px at 85% 15%, rgba(42,169,255,.18), transparent 55%),
-                  linear-gradient(180deg, #03060c, var(--bg));
-      color:var(--txt);
+      margin:0;
+      font-family:system-ui,-apple-system,Segoe UI,Roboto,Helvetica,Arial;
+      min-height:100vh;
+      color:var(--text);
+      background:
+        radial-gradient(900px 600px at 15% 15%, rgba(34,197,94,.18), transparent 60%),
+        radial-gradient(900px 600px at 85% 10%, rgba(45,178,255,.18), transparent 60%),
+        var(--bg);
+      padding:26px;
     }
-    .wrap{max-width:1050px;margin:0 auto;padding:26px 16px 60px}
+    .wrap{width:min(var(--max),100%); margin:0 auto;}
     .top{
-      display:flex; align-items:center; justify-content:space-between; gap:12px;
-      padding:14px 16px; border:1px solid var(--line); border-radius:var(--r);
-      background:linear-gradient(180deg, rgba(255,255,255,.06), rgba(255,255,255,.03));
-      backdrop-filter: blur(10px);
+      display:flex; align-items:center; justify-content:space-between;
+      gap:14px; margin-bottom:18px;
     }
-    .brand{display:flex; gap:12px; align-items:center}
-    .logo{
-      width:42px;height:42px;border-radius:14px;
-      background:linear-gradient(135deg,var(--brand),var(--brand2));
-      box-shadow:0 14px 40px rgba(59,212,165,.18);
-    }
-    .brand h1{margin:0;font-size:14px;letter-spacing:.12em}
-    .brand p{margin:2px 0 0;color:var(--mut);font-size:12px}
+    .brand{display:flex; align-items:center; gap:12px;}
+    .logo{width:42px;height:42px;border-radius:14px;background:linear-gradient(135deg,#22c55e,#2DB2FF); box-shadow:var(--shadow);}
+    .brand h1{font-size:16px; margin:0; letter-spacing:.14em}
+    .brand div{color:var(--muted); font-size:13px; margin-top:2px}
     .pill{
-      border:1px solid var(--line); color:var(--mut);
-      padding:8px 10px;border-radius:999px;font-size:12px;
-      display:flex;gap:8px;align-items:center;
-      background:rgba(0,0,0,.22);
+      padding:8px 12px; border-radius:999px;
+      border:1px solid var(--line);
+      background:rgba(0,0,0,.15);
+      color:var(--muted);
+      font-size:13px;
+      display:inline-flex; gap:8px; align-items:center;
     }
-    .grid{display:grid; grid-template-columns: 1.05fr .95fr; gap:16px; margin-top:16px}
-    @media(max-width:900px){.grid{grid-template-columns:1fr}}
-    .panel{
-      border:1px solid var(--line); border-radius:var(--r);
-      background:linear-gradient(180deg, rgba(255,255,255,.05), rgba(0,0,0,.12));
-      padding:16px;
-    }
-    .hero h2{margin:0 0 8px;font-size:28px}
-    .hero .sub{color:var(--mut); margin:0 0 14px; line-height:1.45}
-    .row{display:flex;gap:10px;flex-wrap:wrap}
-    .btn{
-      appearance:none;border:1px solid var(--line); background:rgba(0,0,0,.22);
-      color:var(--txt); padding:12px 14px; border-radius:14px; cursor:pointer;
-      text-decoration:none; display:inline-flex; align-items:center; gap:10px;
-      transition:.15s transform, .15s background, .15s border;
-      font-weight:650;
-    }
-    .btn:hover{transform:translateY(-1px); border-color:rgba(255,255,255,.18)}
-    .btn.primary{
-      background:linear-gradient(135deg, rgba(59,212,165,.95), rgba(42,169,255,.85));
-      border-color:transparent; color:#031017;
-    }
-    .btn.warn{border-color:rgba(255,204,102,.35)}
-    .btn.danger{border-color:rgba(255,107,107,.35)}
+
+    .grid{display:grid; grid-template-columns: 1.15fr .85fr; gap:18px;}
+    @media (max-width:900px){ .grid{grid-template-columns:1fr;} }
+
     .card{
-      border:1px solid var(--line); border-radius:var(--r);
-      background:rgba(0,0,0,.20); padding:14px;
+      background:linear-gradient(180deg,var(--card),var(--card2));
+      border:1px solid var(--line);
+      border-radius:var(--radius);
+      box-shadow:var(--shadow);
+      padding:18px;
     }
-    .card h3{margin:0 0 10px;font-size:16px}
-    label{display:block;color:var(--mut);font-size:12px;margin:8px 0 6px}
-    input, select{
-      width:100%; padding:12px 12px; border-radius:14px;
-      border:1px solid var(--line); background:rgba(0,0,0,.22); color:var(--txt);
+    h2{margin:0 0 10px; font-size:28px}
+    p{margin:0 0 12px; color:var(--muted); line-height:1.45}
+    .row{display:flex; gap:10px; flex-wrap:wrap; margin:10px 0 14px}
+    .btn{
+      display:inline-flex; align-items:center; justify-content:center;
+      gap:10px;
+      padding:12px 14px;
+      border-radius:14px;
+      border:1px solid var(--line);
+      background:rgba(255,255,255,.06);
+      color:var(--text);
+      text-decoration:none;
+      font-weight:800;
+      cursor:pointer;
+    }
+    .btn.primary{
+      background:linear-gradient(90deg,#22c55e,#2DB2FF);
+      border-color:transparent;
+      color:#071018;
+      width:100%;
+      padding:14px 16px;
+      border-radius:16px;
+    }
+    .status{
+      margin:12px 0 0;
+      padding:10px 12px;
+      border-radius:14px;
+      border:1px solid rgba(245,158,11,.35);
+      background:rgba(245,158,11,.12);
+      color:#ffe6b8;
+      font-size:13px;
+    }
+    .links{margin-top:14px; display:flex; gap:12px; flex-wrap:wrap;}
+    .links a{color:rgba(255,255,255,.75); text-decoration:none; font-size:13px}
+    .links a:hover{text-decoration:underline}
+    .field{margin-top:10px}
+    input{
+      width:100%;
+      padding:12px 12px;
+      border-radius:14px;
+      border:1px solid var(--line);
+      background:rgba(0,0,0,.22);
+      color:var(--text);
       outline:none;
     }
-    .quick{display:flex; gap:10px; flex-wrap:wrap; margin-top:10px}
-    .q{
-      padding:10px 12px; border-radius:999px; border:1px solid var(--line);
-      background:rgba(0,0,0,.22); color:var(--txt); cursor:pointer;
-      font-weight:650;
+    .quick{display:flex; gap:10px; margin-top:10px; flex-wrap:wrap;}
+    .chip{
+      padding:9px 12px;
+      border-radius:999px;
+      border:1px solid var(--line);
+      background:rgba(255,255,255,.06);
+      cursor:pointer;
+      user-select:none;
+      font-weight:800;
+      font-size:13px;
     }
-    .q:hover{border-color:rgba(255,255,255,.18)}
-    .mut{color:var(--mut);font-size:12px}
-    .alert{
-      margin-top:12px; padding:10px 12px; border-radius:14px;
-      border:1px solid rgba(255,204,102,.35); background:rgba(255,204,102,.10);
-      color:#ffe7b0; font-size:13px;
-    }
-    footer{margin-top:16px;color:var(--mut);font-size:12px;display:flex;gap:12px;flex-wrap:wrap}
-    footer a{color:var(--mut);text-decoration:none}
-    footer a:hover{color:var(--txt)}
+    .hint{margin-top:10px; color:var(--muted); font-size:12.5px}
   </style>
 </head>
 <body>
@@ -100,120 +125,72 @@
         <div class="logo"></div>
         <div>
           <h1>MAAVNICA</h1>
-          <p>PayLink · Cobro simple por tarjeta</p>
+          <div>PayLink · Cobro simple por tarjeta</div>
         </div>
       </div>
-      <div class="pill">
-        <span>🔒 Seguro</span>
-        <span>·</span>
-        <span>💳 Tarjeta</span>
-        <span>·</span>
-        <span>🧾 Comprobante</span>
-      </div>
+      <div class="pill">🔒 Seguro · 💳 Tarjeta · 🧾 Comprobante</div>
     </div>
 
     <div class="grid">
-      <div class="panel hero">
-        <h2>Pagar a <span style="color:var(--brand)">{{ merchant.business_name }}</span></h2>
-        <p class="sub">
-          Elegí un monto, pagá con tarjeta y listo. En segundos, el pago queda confirmado.
-        </p>
+      <div class="card">
+        <h2>Pagar a <span style="color:var(--ok)">{{ merchant.business_name }}</span></h2>
+        <p>Elegí un monto, pagá con tarjeta y listo. En segundos, el pago queda confirmado.</p>
 
         <div class="row">
           {% if merchant.whatsapp %}
-          <a class="btn" target="_blank" rel="noopener"
-             href="https://wa.me/{{ merchant.whatsapp|replace('+','')|replace(' ','') }}">
-            💬 WhatsApp
-          </a>
+          <a class="btn" href="https://wa.me/{{ merchant.whatsapp }}" target="_blank">💬 WhatsApp</a>
           {% endif %}
-
-          {% if merchant.stripe_connected %}
-            <span class="btn warn" style="cursor:default">✅ Pagos activos</span>
+          {% if merchant.payment_link %}
+          <span class="btn" style="opacity:.9;">✅ Pagos activos</span>
           {% else %}
-            <span class="btn danger" style="cursor:default">⚠️ Pagos no activos</span>
+          <span class="btn" style="border-color:rgba(245,158,11,.35); color:#ffe6b8;">⚠️ Pagos no activos</span>
           {% endif %}
         </div>
 
-        {% if not merchant.stripe_connected %}
-        <div class="alert">
-          Este PayLink todavía no está listo para cobrar. Falta conectar Stripe.
-        </div>
+        {% if not merchant.payment_link %}
+          <div class="status">
+            Este PayLink todavía no está listo para cobrar. Falta agregar el enlace de pago Stripe.
+          </div>
         {% endif %}
 
-        <footer>
-          <a href="/mentions-legales">Mentions legales</a>
-          <a href="/cgv">CGV</a>
-          <a href="/contact">Contacto</a>
-        </footer>
+        <div class="links">
+          <a href="/mentions-legales" target="_blank">Mentions legales</a>
+          <a href="/cgv-paylink" target="_blank">CGV</a>
+          <a href="/contact" target="_blank">Contacto</a>
+        </div>
       </div>
 
-      <div class="panel">
-        <div class="card">
-          <h3>Elegí tu monto</h3>
+      <div class="card">
+        <h3 style="margin:0 0 10px; font-size:18px;">Elegí tu monto</h3>
 
-          <label>Monto</label>
-          <input id="amount" type="number" min="1" step="1" value="{{ merchant.amount1 or 25 }}" />
-
-          <label>Moneda</label>
-          <select id="currency">
-            <option value="{{ (merchant.currency or 'USD')|upper }}">{{ (merchant.currency or 'USD')|upper }}</option>
-          </select>
-
-          <div class="quick">
-            <button class="q" data-v="{{ merchant.amount1 or 25 }}">{{ merchant.amount1 or 25 }}</button>
-            <button class="q" data-v="{{ merchant.amount2 or 49 }}">{{ merchant.amount2 or 49 }}</button>
-            <button class="q" data-v="{{ merchant.amount3 or 79 }}">{{ merchant.amount3 or 79 }}</button>
-          </div>
-
-          <div style="height:12px"></div>
-
-          <button id="payBtn" class="btn primary" style="width:100%;justify-content:center"
-                  {% if not merchant.stripe_connected %}disabled style="opacity:.6;cursor:not-allowed"{% endif %}>
-            💳 Pagar ahora
-          </button>
-
-          <p class="mut" style="margin:10px 0 0">
-            Procesado por Stripe. Maavnica no retiene tu dinero.
-          </p>
+        <div class="field">
+          <label style="font-size:13px; color:var(--muted);">Monto</label>
+          <input id="amount" type="number" min="1" value="{{ merchant.amount1 or 25 }}">
         </div>
+
+        <div class="quick">
+          <div class="chip" data-v="{{ merchant.amount1 or 25 }}">{{ merchant.amount1 or 25 }}</div>
+          <div class="chip" data-v="{{ merchant.amount2 or 49 }}">{{ merchant.amount2 or 49 }}</div>
+          <div class="chip" data-v="{{ merchant.amount3 or 79 }}">{{ merchant.amount3 or 79 }}</div>
+        </div>
+
+        {% if merchant.payment_link %}
+          <a class="btn primary" id="payBtn" href="{{ merchant.payment_link }}" target="_blank">💳 Pagar ahora</a>
+          <div class="hint">Procesado por Stripe. Maavnica no retiene tu dinero.</div>
+          <div class="hint">Tip: si tu Payment Link es “monto libre”, el cliente podrá elegir el monto en Stripe.</div>
+        {% else %}
+          <button class="btn primary" disabled style="opacity:.55; cursor:not-allowed;">💳 Pagar ahora</button>
+          <div class="hint">Agregá tu enlace Stripe para habilitar pagos.</div>
+        {% endif %}
       </div>
     </div>
   </div>
 
-<script>
-  const $ = (s)=>document.querySelector(s);
-  document.querySelectorAll(".q").forEach(b=>{
-    b.addEventListener("click", ()=> { $("#amount").value = b.dataset.v; });
-  });
-
-  const payBtn = $("#payBtn");
-  if (payBtn) {
-    payBtn.addEventListener("click", async ()=>{
-      const amount = Number($("#amount").value || 0);
-      const currency = String($("#currency").value || "USD").toUpperCase();
-      if (!amount || amount < 1) return alert("Ingresá un monto válido.");
-
-      payBtn.disabled = true;
-      payBtn.textContent = "Redirigiendo a pago…";
-
-      try{
-        const res = await fetch("/api/create-checkout", {
-          method:"POST",
-          headers:{ "Content-Type":"application/json" },
-          body: JSON.stringify({ slug: "{{ merchant.slug }}", amount, currency })
-        });
-        const data = await res.json();
-        if (!res.ok) throw new Error(data.detail || "Error");
-        window.location.href = data.url;
-      }catch(e){
-        alert("No se pudo iniciar el pago: " + (e.message || e));
-        payBtn.disabled = false;
-        payBtn.textContent = "💳 Pagar ahora";
-      }
+  <script>
+    const amount = document.getElementById('amount');
+    document.querySelectorAll('.chip').forEach(ch => {
+      ch.addEventListener('click', () => amount.value = ch.dataset.v);
     });
-  }
-</script>
+  </script>
 </body>
 </html>
-
-
