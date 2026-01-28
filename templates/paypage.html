@@ -3,194 +3,545 @@
 <head>
   <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1" />
-  <title>Pagar a {{ merchant.business_name }}</title>
+  <title>{{ merchant.business_name or "PayLink" }} · PayLink</title>
+
   <style>
     :root{
-      --bg:#070B14;
-      --card:rgba(255,255,255,.08);
-      --card2:rgba(255,255,255,.05);
-      --text:rgba(255,255,255,.92);
-      --muted:rgba(255,255,255,.70);
-      --line:rgba(255,255,255,.12);
-      --warn:#f59e0b;
-      --ok:#22c55e;
-      --blue:#2DB2FF;
-      --shadow:0 18px 55px rgba(0,0,0,.55);
-      --radius:22px;
-      --max:1040px;
+      --bg:#050813;
+      --glass: rgba(255,255,255,.10);
+      --glass2: rgba(255,255,255,.06);
+      --line: rgba(255,255,255,.16);
+      --text: rgba(255,255,255,.93);
+      --muted: rgba(255,255,255,.72);
+      --shadow: 0 18px 60px rgba(0,0,0,.55);
+      --radius: 22px;
+
+      --wa: #22c55e;
+      --pay: #2DB2FF;
+      --map: #f59e0b;
+      --hot: #a855f7;
     }
     *{box-sizing:border-box}
     body{
-      margin:0;
-      font-family:system-ui,-apple-system,Segoe UI,Roboto,Helvetica,Arial;
+      margin:0; color:var(--text);
+      font-family: ui-sans-serif, system-ui, -apple-system, Segoe UI, Roboto, Helvetica, Arial;
       min-height:100vh;
-      color:var(--text);
       background:
-        radial-gradient(900px 600px at 15% 15%, rgba(34,197,94,.18), transparent 60%),
-        radial-gradient(900px 600px at 85% 10%, rgba(45,178,255,.18), transparent 60%),
+        radial-gradient(1100px 650px at 12% 12%, rgba(34,197,94,.28), transparent 60%),
+        radial-gradient(900px 600px at 82% 18%, rgba(45,178,255,.28), transparent 60%),
+        radial-gradient(900px 650px at 55% 92%, rgba(245,158,11,.22), transparent 60%),
+        radial-gradient(1100px 700px at 92% 88%, rgba(168,85,247,.18), transparent 60%),
         var(--bg);
-      padding:26px;
+      padding: 20px 16px 36px;
     }
-    .wrap{width:min(var(--max),100%); margin:0 auto;}
-    .top{
+    .wrap{width:min(1060px,100%); margin:0 auto;}
+    .topbar{
       display:flex; align-items:center; justify-content:space-between;
-      gap:14px; margin-bottom:18px;
+      gap:12px; margin: 6px 0 16px;
     }
-    .brand{display:flex; align-items:center; gap:12px;}
-    .logo{width:42px;height:42px;border-radius:14px;background:linear-gradient(135deg,#22c55e,#2DB2FF); box-shadow:var(--shadow);}
-    .brand h1{font-size:16px; margin:0; letter-spacing:.14em}
-    .brand div{color:var(--muted); font-size:13px; margin-top:2px}
-    .pill{
-      padding:8px 12px; border-radius:999px;
-      border:1px solid var(--line);
-      background:rgba(0,0,0,.15);
-      color:var(--muted);
-      font-size:13px;
-      display:inline-flex; gap:8px; align-items:center;
-    }
-
-    .grid{display:grid; grid-template-columns: 1.15fr .85fr; gap:18px;}
-    @media (max-width:900px){ .grid{grid-template-columns:1fr;} }
-
-    .card{
-      background:linear-gradient(180deg,var(--card),var(--card2));
-      border:1px solid var(--line);
-      border-radius:var(--radius);
-      box-shadow:var(--shadow);
-      padding:18px;
-    }
-    h2{margin:0 0 10px; font-size:28px}
-    p{margin:0 0 12px; color:var(--muted); line-height:1.45}
-    .row{display:flex; gap:10px; flex-wrap:wrap; margin:10px 0 14px}
-    .btn{
-      display:inline-flex; align-items:center; justify-content:center;
-      gap:10px;
-      padding:12px 14px;
-      border-radius:14px;
-      border:1px solid var(--line);
-      background:rgba(255,255,255,.06);
-      color:var(--text);
-      text-decoration:none;
-      font-weight:800;
-      cursor:pointer;
-    }
-    .btn.primary{
-      background:linear-gradient(90deg,#22c55e,#2DB2FF);
-      border-color:transparent;
-      color:#071018;
-      width:100%;
-      padding:14px 16px;
-      border-radius:16px;
-    }
-    .status{
-      margin:12px 0 0;
+    .brand{
+      display:flex; align-items:center; gap:10px;
       padding:10px 12px;
-      border-radius:14px;
-      border:1px solid rgba(245,158,11,.35);
-      background:rgba(245,158,11,.12);
-      color:#ffe6b8;
-      font-size:13px;
+      border:1px solid var(--line);
+      border-radius: 999px;
+      background: rgba(0,0,0,.18);
+      backdrop-filter: blur(10px);
+      box-shadow: var(--shadow);
     }
-    .links{margin-top:14px; display:flex; gap:12px; flex-wrap:wrap;}
-    .links a{color:rgba(255,255,255,.75); text-decoration:none; font-size:13px}
-    .links a:hover{text-decoration:underline}
-    .field{margin-top:10px}
+    .dot{
+      width:28px; height:28px; border-radius:10px;
+      background: linear-gradient(135deg, var(--wa), var(--pay), var(--hot));
+    }
+    .brand b{letter-spacing:.14em; font-size:12px}
+    .brand span{color:var(--muted); font-size:12px; margin-left:8px}
+
+    .lang{
+      display:flex; gap:8px; align-items:center;
+      padding:10px 12px;
+      border-radius: 999px;
+      border:1px solid var(--line);
+      background: rgba(0,0,0,.18);
+      backdrop-filter: blur(10px);
+      box-shadow: var(--shadow);
+    }
+    .lang button{
+      border:1px solid transparent;
+      background: transparent;
+      color: var(--muted);
+      padding:6px 10px;
+      border-radius: 999px;
+      cursor:pointer;
+      font-weight: 800;
+      font-size: 12px;
+    }
+    .lang button.active{
+      color: #061018;
+      background: linear-gradient(90deg, rgba(34,197,94,.95), rgba(45,178,255,.95));
+      border-color: transparent;
+    }
+
+    .grid{
+      display:grid;
+      grid-template-columns: 1.1fr .9fr;
+      gap: 16px;
+    }
+    @media (max-width: 920px){
+      .grid{grid-template-columns:1fr;}
+    }
+    .card{
+      border:1px solid var(--line);
+      background: linear-gradient(180deg, var(--glass), var(--glass2));
+      border-radius: var(--radius);
+      box-shadow: var(--shadow);
+      backdrop-filter: blur(14px);
+      padding: 16px;
+    }
+
+    /* HERO */
+    .hero{
+      display:flex; gap:14px; align-items:center;
+      padding: 14px;
+      border-radius: 18px;
+      border: 1px solid rgba(255,255,255,.14);
+      background: rgba(0,0,0,.18);
+    }
+    .avatar{
+      width:70px; height:70px; border-radius: 20px;
+      overflow:hidden; flex:0 0 auto;
+      position:relative;
+      border: 1px solid rgba(255,255,255,.18);
+      background: rgba(255,255,255,.06);
+    }
+    .avatar::after{
+      content:"";
+      position:absolute; inset:-30px;
+      background: radial-gradient(circle at 30% 30%, rgba(34,197,94,.35), transparent 55%),
+                  radial-gradient(circle at 80% 20%, rgba(45,178,255,.35), transparent 55%),
+                  radial-gradient(circle at 50% 85%, rgba(245,158,11,.22), transparent 55%);
+      filter: blur(10px);
+      opacity: .85;
+      pointer-events:none;
+    }
+    .avatar img{
+      width:100%; height:100%; object-fit:cover;
+      position:relative; z-index:1;
+    }
+    .h-title{margin:0; font-size:22px; line-height:1.1}
+    .h-sub{margin:6px 0 0; color:var(--muted); font-size:13px}
+    .badges{display:flex; gap:8px; flex-wrap:wrap; margin-top:10px}
+    .badge{
+      display:inline-flex; gap:8px; align-items:center;
+      padding:8px 10px;
+      border-radius: 999px;
+      border: 1px solid rgba(255,255,255,.14);
+      background: rgba(255,255,255,.06);
+      font-size: 12px;
+      color: rgba(255,255,255,.82);
+    }
+
+    /* ACTIONS */
+    .actions{display:grid; grid-template-columns: 1fr; gap:10px; margin-top:14px;}
+    .btn{
+      display:flex; align-items:center; justify-content:center;
+      gap:10px;
+      padding:14px 14px;
+      border-radius: 16px;
+      border: 1px solid rgba(255,255,255,.14);
+      background: rgba(255,255,255,.06);
+      color: var(--text);
+      text-decoration:none;
+      font-weight: 900;
+      letter-spacing: .01em;
+      cursor:pointer;
+      transition: transform .08s ease;
+      user-select:none;
+    }
+    .btn:active{transform: translateY(1px);}
+    .btn.wa{
+      background: linear-gradient(90deg, rgba(34,197,94,.95), rgba(34,197,94,.65));
+      color: #04110a;
+      border-color: transparent;
+    }
+    .btn.pay{
+      background: linear-gradient(90deg, rgba(45,178,255,.95), rgba(168,85,247,.55));
+      color: #061018;
+      border-color: transparent;
+    }
+    .btn.map{
+      background: linear-gradient(90deg, rgba(245,158,11,.92), rgba(245,158,11,.55));
+      color:#1a1003;
+      border-color: transparent;
+    }
+    .btn.disabled{
+      opacity:.55; cursor:not-allowed; transform:none !important;
+      background: rgba(255,255,255,.06) !important;
+      color: rgba(255,255,255,.75) !important;
+      border-color: rgba(255,255,255,.14) !important;
+    }
+
+    /* AMOUNTS */
+    .field{margin-top:12px}
+    .label{font-size:12px; color:var(--muted); margin-bottom:6px}
     input{
       width:100%;
       padding:12px 12px;
-      border-radius:14px;
-      border:1px solid var(--line);
-      background:rgba(0,0,0,.22);
-      color:var(--text);
+      border-radius: 14px;
+      border:1px solid rgba(255,255,255,.16);
+      background: rgba(0,0,0,.22);
+      color: var(--text);
       outline:none;
     }
-    .quick{display:flex; gap:10px; margin-top:10px; flex-wrap:wrap;}
+    .chips{display:flex; gap:10px; flex-wrap:wrap; margin-top:10px}
     .chip{
       padding:9px 12px;
-      border-radius:999px;
-      border:1px solid var(--line);
-      background:rgba(255,255,255,.06);
+      border-radius: 999px;
+      border: 1px solid rgba(255,255,255,.14);
+      background: rgba(255,255,255,.07);
       cursor:pointer;
-      user-select:none;
-      font-weight:800;
-      font-size:13px;
+      font-weight: 900;
+      font-size: 13px;
     }
-    .hint{margin-top:10px; color:var(--muted); font-size:12.5px}
+    .hint{margin-top:10px; color:var(--muted); font-size:12.5px; line-height:1.35}
+
+    /* SHARE */
+    .shareRow{display:flex; gap:10px; flex-wrap:wrap; margin-top:12px}
+    .mini{
+      padding:10px 12px;
+      border-radius: 14px;
+      border:1px solid rgba(255,255,255,.14);
+      background: rgba(255,255,255,.06);
+      color: rgba(255,255,255,.88);
+      cursor:pointer;
+      font-weight: 800;
+      font-size: 12.5px;
+    }
+
+    /* QR modal */
+    .modal{
+      position:fixed; inset:0;
+      background: rgba(0,0,0,.55);
+      display:none;
+      align-items:center; justify-content:center;
+      padding: 18px;
+      z-index: 999;
+    }
+    .modal.open{display:flex;}
+    .modalCard{
+      width:min(420px, 100%);
+      border-radius: 22px;
+      border:1px solid rgba(255,255,255,.16);
+      background: linear-gradient(180deg, rgba(255,255,255,.12), rgba(255,255,255,.06));
+      box-shadow: var(--shadow);
+      backdrop-filter: blur(16px);
+      padding: 16px;
+      text-align:center;
+    }
+    .modalCard h4{margin:0 0 8px}
+    .qrWrap{
+      display:flex; justify-content:center;
+      padding: 12px;
+      border-radius: 18px;
+      border:1px solid rgba(255,255,255,.14);
+      background: rgba(0,0,0,.22);
+      margin: 10px 0 12px;
+    }
+    .close{
+      width:100%;
+      margin-top: 8px;
+      padding: 12px 14px;
+      border-radius: 16px;
+      border:1px solid rgba(255,255,255,.14);
+      background: rgba(255,255,255,.06);
+      color: var(--text);
+      font-weight: 900;
+      cursor:pointer;
+    }
+
+    .footerLinks{margin-top:14px; display:flex; gap:12px; flex-wrap:wrap;}
+    .footerLinks a{color:rgba(255,255,255,.78); text-decoration:none; font-size:12.5px}
+    .footerLinks a:hover{text-decoration:underline}
   </style>
 </head>
+
 <body>
   <div class="wrap">
-    <div class="top">
+    <div class="topbar">
       <div class="brand">
-        <div class="logo"></div>
+        <div class="dot"></div>
         <div>
-          <h1>MAAVNICA</h1>
-          <div>PayLink · Cobro simple por tarjeta</div>
+          <b>MAAVNICA</b>
+          <span>PayLink</span>
         </div>
       </div>
-      <div class="pill">🔒 Seguro · 💳 Tarjeta · 🧾 Comprobante</div>
+
+      <div class="lang" aria-label="Language toggle">
+        <button id="btnES" type="button" class="active">ES</button>
+        <button id="btnFR" type="button">FR</button>
+      </div>
     </div>
 
     <div class="grid">
+      <!-- LEFT: identity + actions -->
       <div class="card">
-        <h2>Pagar a <span style="color:var(--ok)">{{ merchant.business_name }}</span></h2>
-        <p>Elegí un monto, pagá con tarjeta y listo. En segundos, el pago queda confirmado.</p>
+        <div class="hero">
+          <div class="avatar">
+            {% if merchant.photo_url %}
+              <img src="{{ merchant.photo_url }}" alt="Foto" />
+            {% else %}
+              <img src="https://images.unsplash.com/photo-1520975682031-a07f84c73372?auto=format&fit=crop&w=300&q=70" alt="Foto" />
+            {% endif %}
+          </div>
+          <div style="flex:1">
+            <h2 class="h-title">{{ merchant.business_name or "Tu negocio" }}</h2>
+            <div class="h-sub" id="headline">
+              {{ merchant.headline or "" }}
+            </div>
 
-        <div class="row">
-          {% if merchant.whatsapp %}
-          <a class="btn" href="https://wa.me/{{ merchant.whatsapp }}" target="_blank">💬 WhatsApp</a>
-          {% endif %}
+            <div class="badges">
+              <div class="badge" data-i18n="secure">🔒 Pago seguro</div>
+              <div class="badge" data-i18n="receipt">🧾 Recibo automático</div>
+              <div class="badge" data-i18n="fast">⚡ Confirmación rápida</div>
+            </div>
+          </div>
+        </div>
+
+        <div class="actions">
+          {% set wa = (merchant.whatsapp or "").replace("+","") %}
+          <a id="waBtn" class="btn wa"
+             href="{% if wa %}https://wa.me/{{ wa }}{% else %}#{% endif %}"
+             {% if not wa %}onclick="return false"{% endif %}
+             target="_blank" rel="noopener">
+            💬 <span data-i18n="whatsapp">Hablar por WhatsApp</span>
+          </a>
+
           {% if merchant.payment_link %}
-          <span class="btn" style="opacity:.9;">✅ Pagos activos</span>
+          <a id="payBtn" class="btn pay" href="{{ merchant.payment_link }}" target="_blank" rel="noopener">
+            💳 <span data-i18n="pay">Pagar ahora</span>
+          </a>
           {% else %}
-          <span class="btn" style="border-color:rgba(245,158,11,.35); color:#ffe6b8;">⚠️ Pagos no activos</span>
+          <div class="btn pay disabled">
+            💳 <span data-i18n="pay_disabled">Pago no disponible</span>
+          </div>
+          {% endif %}
+
+          {% if merchant.maps_url %}
+          <a class="btn map" href="{{ merchant.maps_url }}" target="_blank" rel="noopener">
+            📍 <span data-i18n="maps">Ver ubicación</span>
+          </a>
           {% endif %}
         </div>
 
         {% if not merchant.payment_link %}
-          <div class="status">
-            Este PayLink todavía no está listo para cobrar. Falta agregar el enlace de pago Stripe.
-          </div>
+        <div class="hint" style="margin-top:10px" data-i18n="missing_link">
+          Este PayLink todavía no está listo para cobrar. Falta agregar el enlace Stripe.
+        </div>
+        {% else %}
+        <div class="hint" style="margin-top:10px" data-i18n="no_hold">
+          Procesado por Stripe. Maavnica no retiene tu dinero.
+        </div>
         {% endif %}
 
-        <div class="links">
+        <div class="shareRow">
+          <button class="mini" id="shareBtn" type="button">📣 <span data-i18n="share">Compartir</span></button>
+          <button class="mini" id="copyBtn" type="button">🔗 <span data-i18n="copy">Copiar enlace</span></button>
+          <button class="mini" id="qrBtn" type="button">📱 <span data-i18n="qr">Mostrar QR</span></button>
+        </div>
+
+        <div class="footerLinks">
           <a href="/mentions-legales" target="_blank">Mentions legales</a>
           <a href="/cgv-paylink" target="_blank">CGV</a>
-          <a href="/contact" target="_blank">Contacto</a>
+          <a href="/contact" target="_blank" data-i18n="contact">Contacto</a>
         </div>
       </div>
 
+      <!-- RIGHT: amount selector (visual WOW) -->
       <div class="card">
-        <h3 style="margin:0 0 10px; font-size:18px;">Elegí tu monto</h3>
+        <h3 style="margin:0 0 6px; font-size:18px" data-i18n="choose_amount">Elegí tu monto</h3>
 
         <div class="field">
-          <label style="font-size:13px; color:var(--muted);">Monto</label>
+          <div class="label" data-i18n="amount_label">Monto</div>
           <input id="amount" type="number" min="1" value="{{ merchant.amount1 or 25 }}">
         </div>
 
-        <div class="quick">
+        <div class="chips">
           <div class="chip" data-v="{{ merchant.amount1 or 25 }}">{{ merchant.amount1 or 25 }}</div>
           <div class="chip" data-v="{{ merchant.amount2 or 49 }}">{{ merchant.amount2 or 49 }}</div>
           <div class="chip" data-v="{{ merchant.amount3 or 79 }}">{{ merchant.amount3 or 79 }}</div>
+          <div class="chip" data-v="" data-i18n="other">Otro</div>
         </div>
 
-        {% if merchant.payment_link %}
-          <a class="btn primary" id="payBtn" href="{{ merchant.payment_link }}" target="_blank">💳 Pagar ahora</a>
-          <div class="hint">Procesado por Stripe. Maavnica no retiene tu dinero.</div>
-          <div class="hint">Tip: si tu Payment Link es “monto libre”, el cliente podrá elegir el monto en Stripe.</div>
-        {% else %}
-          <button class="btn primary" disabled style="opacity:.55; cursor:not-allowed;">💳 Pagar ahora</button>
-          <div class="hint">Agregá tu enlace Stripe para habilitar pagos.</div>
-        {% endif %}
+        <div class="hint" data-i18n="amount_hint">
+          Consejo: si el enlace Stripe es “monto libre”, el cliente confirma el monto en Stripe.
+        </div>
+
+        <div style="margin-top:14px; border-top:1px solid rgba(255,255,255,.12); padding-top:14px;">
+          <div class="hint" data-i18n="use_case">
+            Ideal para cobrar por WhatsApp, Facebook o SMS en segundos.
+          </div>
+        </div>
       </div>
     </div>
   </div>
 
+  <!-- QR Modal -->
+  <div class="modal" id="qrModal" role="dialog" aria-modal="true">
+    <div class="modalCard">
+      <h4 data-i18n="qr_title">Escaneá para abrir el PayLink</h4>
+      <div class="qrWrap">
+        <img id="qrImg" src="/qr/{{ merchant.slug }}.png" alt="QR" style="width:220px;height:220px;border-radius:12px;" />
+      </div>
+      <div class="hint" data-i18n="qr_hint">Podés imprimirlo y pegarlo en tu local.</div>
+      <button class="close" id="qrClose" type="button" data-i18n="close">Cerrar</button>
+    </div>
+  </div>
+
   <script>
-    const amount = document.getElementById('amount');
-    document.querySelectorAll('.chip').forEach(ch => {
-      ch.addEventListener('click', () => amount.value = ch.dataset.v);
+    // ---------- i18n ----------
+    const I18N = {
+      es: {
+        secure: "🔒 Pago seguro",
+        receipt: "🧾 Recibo automático",
+        fast: "⚡ Confirmación rápida",
+        whatsapp: "Hablar por WhatsApp",
+        pay: "Pagar ahora",
+        pay_disabled: "Pago no disponible",
+        maps: "Ver ubicación",
+        missing_link: "Este PayLink todavía no está listo para cobrar. Falta agregar el enlace Stripe.",
+        no_hold: "Procesado por Stripe. Maavnica no retiene tu dinero.",
+        share: "Compartir",
+        copy: "Copiar enlace",
+        qr: "Mostrar QR",
+        contact: "Contacto",
+        choose_amount: "Elegí tu monto",
+        amount_label: "Monto",
+        other: "Otro",
+        amount_hint: "Consejo: si el enlace Stripe es “monto libre”, el cliente confirma el monto en Stripe.",
+        use_case: "Ideal para cobrar por WhatsApp, Facebook o SMS en segundos.",
+        qr_title: "Escaneá para abrir el PayLink",
+        qr_hint: "Podés imprimirlo y pegarlo en tu local.",
+        close: "Cerrar"
+      },
+      fr: {
+        secure: "🔒 Paiement sécurisé",
+        receipt: "🧾 Reçu automatique",
+        fast: "⚡ Confirmation rapide",
+        whatsapp: "Contacter sur WhatsApp",
+        pay: "Payer maintenant",
+        pay_disabled: "Paiement indisponible",
+        maps: "Voir l’emplacement",
+        missing_link: "Ce PayLink n’est pas encore prêt. Il manque le lien Stripe.",
+        no_hold: "Traitée par Stripe. Maavnica ne retient pas votre argent.",
+        share: "Partager",
+        copy: "Copier le lien",
+        qr: "Afficher le QR",
+        contact: "Contact",
+        choose_amount: "Choisissez un montant",
+        amount_label: "Montant",
+        other: "Autre",
+        amount_hint: "Astuce : si le lien Stripe est en “montant libre”, le client confirme le montant sur Stripe.",
+        use_case: "Idéal pour encaisser via WhatsApp, Facebook ou SMS en quelques secondes.",
+        qr_title: "Scannez pour ouvrir le PayLink",
+        qr_hint: "Vous pouvez l’imprimer et l’afficher dans votre boutique.",
+        close: "Fermer"
+      }
+    };
+
+    function applyLang(lang){
+      const dict = I18N[lang] || I18N.es;
+      document.querySelectorAll("[data-i18n]").forEach(el => {
+        const key = el.getAttribute("data-i18n");
+        if (dict[key]) el.textContent = dict[key];
+      });
+      document.getElementById("btnES").classList.toggle("active", lang === "es");
+      document.getElementById("btnFR").classList.toggle("active", lang === "fr");
+      localStorage.setItem("paylink_lang", lang);
+    }
+
+    const savedLang = localStorage.getItem("paylink_lang") || "es";
+    applyLang(savedLang);
+    document.getElementById("btnES").addEventListener("click", () => applyLang("es"));
+    document.getElementById("btnFR").addEventListener("click", () => applyLang("fr"));
+
+    // ---------- Amount chips (pure UX; Stripe amount can't be injected into standard Payment Link) ----------
+    const amountEl = document.getElementById("amount");
+    document.querySelectorAll(".chip").forEach(ch => {
+      ch.addEventListener("click", () => {
+        const v = ch.dataset.v;
+        if (v === "") amountEl.focus();
+        else amountEl.value = v;
+        updateWhatsAppPrefill();
+      });
     });
+    amountEl.addEventListener("input", updateWhatsAppPrefill);
+
+    // ---------- WhatsApp prefill ----------
+    const waBtn = document.getElementById("waBtn");
+    function updateWhatsAppPrefill(){
+      if (!waBtn) return;
+      const base = waBtn.getAttribute("href");
+      if (!base || base === "#") return;
+
+      // message from DB if provided, else default
+      const custom = "{{ (merchant.whatsapp_message or '') | replace('\n',' ') | replace('\r',' ') }}".trim();
+      const amt = (Number(amountEl.value) || "").toString();
+      const defES = `Hola, quiero información${amt ? " y pagar " + amt + " {{ merchant.currency or 'USD' }}" : ""}.`;
+      const defFR = `Bonjour, je veux une info${amt ? " et payer " + amt + " {{ merchant.currency or 'USD' }}" : ""}.`;
+
+      const lang = localStorage.getItem("paylink_lang") || "es";
+      const msg = custom || (lang === "fr" ? defFR : defES);
+
+      const url = base.split("?")[0] + "?text=" + encodeURIComponent(msg);
+      waBtn.setAttribute("href", url);
+    }
+    updateWhatsAppPrefill();
+
+    // ---------- Share / copy ----------
+    const shareBtn = document.getElementById("shareBtn");
+    const copyBtn = document.getElementById("copyBtn");
+    const pageUrl = window.location.href;
+
+    shareBtn?.addEventListener("click", async () => {
+      try{
+        if (navigator.share){
+          await navigator.share({ title: document.title, url: pageUrl });
+        } else {
+          await navigator.clipboard.writeText(pageUrl);
+          copyBtn.textContent = "✅ OK";
+          setTimeout(()=> copyBtn.textContent="🔗 " + (localStorage.getItem("paylink_lang")==="fr" ? "Copier le lien" : "Copiar enlace"), 900);
+        }
+      } catch(e){}
+    });
+
+    copyBtn?.addEventListener("click", async () => {
+      try{
+        await navigator.clipboard.writeText(pageUrl);
+        copyBtn.textContent = "✅ OK";
+        setTimeout(()=> copyBtn.textContent="🔗 " + (localStorage.getItem("paylink_lang")==="fr" ? "Copier le lien" : "Copiar enlace"), 900);
+      } catch(e){}
+    });
+
+    // ---------- Minimal QR (no library): quick & good-enough QR via external image fallback ----------
+    // If you want 100% offline QR, add a tiny QR lib; for now we draw using an image service.
+    const qrBtn = document.getElementById("qrBtn");
+    const qrModal = document.getElementById("qrModal");
+    const qrClose = document.getElementById("qrClose");
+    const canvas = document.getElementById("qrCanvas");
+    const ctx = canvas.getContext("2d");
+
+    function drawQr(){
+  const img = document.getElementById('qrImg');
+  if(img){ img.src = `/qr/{{ merchant.slug }}.png`; }
+}
+;
+    }
+
+    qrBtn?.addEventListener("click", () => {
+      drawQr();
+      qrModal.classList.add("open");
+    });
+    qrClose?.addEventListener("click", () => qrModal.classList.remove("open"));
+    qrModal?.addEventListener("click", (e) => { if(e.target === qrModal) qrModal.classList.remove("open"); });
   </script>
 </body>
 </html>
+

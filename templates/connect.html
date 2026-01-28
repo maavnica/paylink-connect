@@ -1,123 +1,102 @@
 <!doctype html>
-<html lang="es">
+<html lang="fr">
 <head>
-  <meta charset="utf-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1" />
-  <title>PayLink — Activar pagos</title>
+  <meta charset="utf-8"/>
+  <meta name="viewport" content="width=device-width,initial-scale=1"/>
+  <title>PayLink Connect — Admin</title>
   <style>
-    :root{
-      --bg:#070B14;
-      --card:rgba(255,255,255,.08);
-      --card2:rgba(255,255,255,.05);
-      --text:rgba(255,255,255,.92);
-      --muted:rgba(255,255,255,.70);
-      --line:rgba(255,255,255,.12);
-      --warn:#f59e0b;
-      --ok:#22c55e;
-      --blue:#2DB2FF;
-      --shadow:0 18px 55px rgba(0,0,0,.55);
-      --radius:22px;
-      --max:1100px;
-    }
-    *{box-sizing:border-box}
-    body{
-      margin:0;
-      font-family:system-ui,-apple-system,Segoe UI,Roboto,Helvetica,Arial;
-      min-height:100vh;
-      color:var(--text);
-      background:
-        radial-gradient(900px 600px at 15% 15%, rgba(34,197,94,.18), transparent 60%),
-        radial-gradient(900px 600px at 85% 10%, rgba(45,178,255,.18), transparent 60%),
-        var(--bg);
-      padding:26px;
-    }
-    .wrap{width:min(var(--max),100%); margin:0 auto;}
-    .top{display:flex; align-items:center; justify-content:space-between; gap:14px; margin-bottom:18px;}
-    .brand{display:flex; align-items:center; gap:12px;}
-    .logo{width:42px;height:42px;border-radius:14px;background:linear-gradient(135deg,#22c55e,#2DB2FF); box-shadow:var(--shadow);}
-    .brand h1{font-size:16px; margin:0; letter-spacing:.14em}
-    .brand div{color:var(--muted); font-size:13px; margin-top:2px}
-    .pill{padding:8px 12px; border-radius:999px; border:1px solid var(--line); background:rgba(0,0,0,.15); color:var(--muted); font-size:13px; display:inline-flex; gap:8px; align-items:center;}
-    .grid{display:grid; grid-template-columns: 1fr 1fr; gap:18px;}
-    @media (max-width:980px){ .grid{grid-template-columns:1fr;} }
-    .card{background:linear-gradient(180deg,var(--card),var(--card2)); border:1px solid var(--line); border-radius:var(--radius); box-shadow:var(--shadow); padding:18px;}
-    h2{margin:0 0 10px; font-size:26px}
-    p{margin:0 0 12px; color:var(--muted); line-height:1.45}
-    .kv{display:grid; grid-template-columns: 180px 1fr; gap:10px; margin-top:10px; font-size:14px;}
-    .kv div:nth-child(odd){color:var(--muted)}
-    .btn{display:inline-flex; align-items:center; justify-content:center; gap:10px; padding:12px 14px; border-radius:14px; border:1px solid var(--line); background:rgba(255,255,255,.06); color:var(--text); text-decoration:none; font-weight:800; cursor:pointer;}
-    .btn.primary{background:linear-gradient(90deg,#22c55e,#2DB2FF); border-color:transparent; color:#071018;}
-    .btn.full{width:100%;}
-    .status{margin:12px 0 0; padding:10px 12px; border-radius:14px; border:1px solid rgba(245,158,11,.35); background:rgba(245,158,11,.12); color:#ffe6b8; font-size:13px;}
-    .ok{border-color:rgba(34,197,94,.35); background:rgba(34,197,94,.10); color:#d9ffe7;}
-    .field{margin-top:12px}
-    input{width:100%; padding:12px 12px; border-radius:14px; border:1px solid var(--line); background:rgba(0,0,0,.22); color:var(--text); outline:none;}
-    .hint{margin-top:8px; color:var(--muted); font-size:12.5px; line-height:1.35}
-    .row{display:flex; gap:10px; flex-wrap:wrap; margin-top:12px;}
+    body{font-family:system-ui,-apple-system,Segoe UI,Roboto,Arial;margin:0;background:#0b1020;color:#e8ecff}
+    .wrap{max-width:980px;margin:0 auto;padding:24px}
+    .card{background:rgba(255,255,255,.06);border:1px solid rgba(255,255,255,.12);border-radius:18px;padding:18px}
+    .grid{display:grid;grid-template-columns:1fr 1fr;gap:14px}
+    label{display:block;font-size:12px;opacity:.85;margin:10px 0 6px}
+    input,textarea{width:100%;padding:12px;border-radius:12px;border:1px solid rgba(255,255,255,.14);background:rgba(0,0,0,.25);color:#fff}
+    textarea{min-height:90px;resize:vertical}
+    .top{display:flex;justify-content:space-between;align-items:center;margin-bottom:14px;gap:12px;flex-wrap:wrap}
+    .btn{display:inline-block;padding:12px 14px;border-radius:12px;border:1px solid rgba(255,255,255,.18);background:rgba(255,255,255,.08);color:#fff;text-decoration:none;cursor:pointer}
+    .btn.primary{background:rgba(80,120,255,.25);border-color:rgba(80,120,255,.5)}
+    .muted{opacity:.8;font-size:13px}
+    img.preview{width:100%;max-height:320px;object-fit:cover;border-radius:14px;border:1px solid rgba(255,255,255,.12)}
+    code{background:rgba(255,255,255,.08);padding:2px 6px;border-radius:8px}
+    @media(max-width:860px){.grid{grid-template-columns:1fr}}
   </style>
 </head>
 <body>
   <div class="wrap">
     <div class="top">
-      <div class="brand">
-        <div class="logo"></div>
-        <div>
-          <h1>MAAVNICA</h1>
-          <div>PayLink · Página bankable para cobrar</div>
-        </div>
+      <div>
+        <h2 style="margin:0 0 6px">Admin Connect</h2>
+        <div class="muted">Merchant #{{ merchant.id }} — <b>{{ merchant.business_name }}</b> — slug: <code>{{ merchant.slug }}</code></div>
       </div>
-      <div class="pill">🔒 Seguro · 💳 Stripe · 💬 WhatsApp</div>
+      <div style="display:flex;gap:10px;flex-wrap:wrap;justify-content:flex-end">
+        <a class="btn" href="/p/{{ merchant.slug }}" target="_blank">Ouvrir page publique</a>
+        <a class="btn" href="/qr/{{ merchant.slug }}.png" target="_blank">Voir QR</a>
+      </div>
     </div>
 
-    <div class="grid">
-      <div class="card">
-        <h2>Tu página PayLink</h2>
-        <p>Tu link ya está listo. Solo falta activar el botón de pago pegando tu <b>Stripe Payment Link</b> (con “monto libre” recomendado).</p>
+    <div class="card">
+      <form method="post" action="/connect/{{ merchant.id }}/save?key={{ request.query_params.get('key','') }}">
+        <div class="grid">
+          <div>
+            <label>Headline (petite phrase)</label>
+            <input name="headline" value="{{ merchant.headline or '' }}" placeholder="Ex: Paiement simple & rapide via WhatsApp"/>
 
-        <div class="kv">
-          <div>Negocio</div><div>{{ merchant.business_name }}</div>
-          <div>Contacto</div><div>{{ merchant.contact_name or "—" }}</div>
-          <div>WhatsApp</div><div>{{ merchant.whatsapp or "—" }}</div>
-          <div>Moneda</div><div>{{ merchant.currency or "USD" }}</div>
-          <div>Montos rápidos</div><div>{{ merchant.amount1 or 25 }} / {{ merchant.amount2 or 49 }} / {{ merchant.amount3 or 79 }}</div>
-          <div>Tu página</div><div><a href="/p/{{ merchant.slug }}" style="color:#cfe9ff" target="_blank">/p/{{ merchant.slug }}</a></div>
-        </div>
+            <label>Payment link (Stripe Payment Link)</label>
+            <input name="payment_link" value="{{ merchant.payment_link or '' }}" placeholder="https://buy.stripe.com/..."/>
 
-        <div class="row">
-          <a class="btn" href="/p/{{ merchant.slug }}" target="_blank">👀 Ver mi página</a>
-          <a class="btn" href="/start">➕ Crear otra</a>
-        </div>
+            <label>Maps URL (option)</label>
+            <input name="maps_url" value="{{ merchant.maps_url or '' }}" placeholder="Lien Google Maps / Waze"/>
 
-        {% if merchant.payment_link %}
-          <div class="status ok">✅ Pagos activos. El botón “Pagar ahora” abre tu Stripe.</div>
-        {% else %}
-          <div class="status">⚠️ Pagos no activos. Pegá tu Payment Link Stripe abajo para habilitar.</div>
-        {% endif %}
-      </div>
+            <label>Photo URL</label>
+            <input id="photo_url" name="photo_url" value="{{ merchant.photo_url or '' }}" placeholder="https://...jpg"/>
 
-      <div class="card">
-        <h2>Activar el botón de pago</h2>
+            <label>Message WhatsApp (option)</label>
+            <textarea name="whatsapp_message" placeholder="Ex: Hola! Quiero pagar mi servicio...">{{ merchant.whatsapp_message or '' }}</textarea>
 
-        <form method="POST" action="/connect/{{ merchant.id }}/save">
-          <div class="field">
-            <label style="font-size:13px; color:var(--muted);">Tu enlace Stripe (Payment Link)</label>
-            <input name="payment_link" placeholder="https://buy.stripe.com/..." value="{{ merchant.payment_link or '' }}" />
-            <div class="hint">
-              Consejo: en Stripe, crea un <b>Payment Link</b> con “monto libre” para que el cliente elija el monto.
-              <br/>Maavnica no retiene tu dinero: el pago va directo a tu Stripe.
+            <button class="btn primary" type="submit" style="margin-top:10px;width:100%">Enregistrer</button>
+
+            <div class="muted" style="margin-top:10px">
+              Accès admin : <code>/connect/{{ merchant.id }}?key=TON_ADMIN_KEY</code>
             </div>
           </div>
 
-          <div class="field">
-            <button class="btn primary full" type="submit">💾 Guardar</button>
-          </div>
-        </form>
+          <div>
+            <div class="muted" style="margin-bottom:8px">Aperçu photo</div>
+            <img id="photoPreview" class="preview" src="{{ merchant.photo_url or 'https://via.placeholder.com/1200x700?text=Photo' }}" alt="preview"/>
 
-        <div class="hint" style="margin-top:12px;">
-          ¿No tenés Stripe? Podés crearlo en minutos. Después volvés aquí y pegás el link.
+            <div style="margin-top:14px" class="card">
+              <div class="muted" style="margin-bottom:8px">Actions rapides</div>
+
+              <a class="btn" style="width:100%;text-align:center;margin-bottom:10px"
+                 target="_blank"
+                 href="https://wa.me/{{ (merchant.whatsapp or '')|replace('+','')|replace(' ','') }}?text={{ (merchant.whatsapp_message or 'Hola! Quiero pagar.')|urlencode }}">
+                Tester WhatsApp
+              </a>
+
+              {% if merchant.payment_link %}
+              <a class="btn primary" style="width:100%;text-align:center"
+                 target="_blank"
+                 href="{{ merchant.payment_link }}">
+                Tester paiement (Stripe)
+              </a>
+              {% else %}
+              <div class="muted">Ajoute un <b>payment_link</b> pour activer le bouton Stripe.</div>
+              {% endif %}
+            </div>
+
+          </div>
         </div>
-      </div>
+      </form>
     </div>
   </div>
+
+  <script>
+    const input = document.getElementById("photo_url");
+    const img = document.getElementById("photoPreview");
+    input?.addEventListener("input", () => {
+      const v = (input.value || "").trim();
+      if (v) img.src = v;
+    });
+  </script>
 </body>
 </html>

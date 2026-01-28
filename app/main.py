@@ -1,13 +1,16 @@
 import os
 import re
+import io
 import sqlite3
 from datetime import datetime
-from typing import Optional, Dict, Any
+from typing import Optional
 
 from fastapi import FastAPI, Request, Form, HTTPException
-from fastapi.responses import HTMLResponse, RedirectResponse
+from fastapi.responses import HTMLResponse, RedirectResponse, Response
 from fastapi.staticfiles import StaticFiles
 from fastapi.templating import Jinja2Templates
+
+import qrcode
 
 # ============================================================
 # CONFIG
@@ -22,12 +25,36 @@ STATIC_DIR = os.path.join(PROJECT_ROOT, "static")
 
 BASE_URL = os.getenv("BASE_URL", "http://127.0.0.1:8000").rstrip("/")
 APP_ENV = os.getenv("APP_ENV", "dev").lower().strip()
+ADMIN_KEY = os.getenv("ADMIN_KEY", "")
 
-app = FastAPI(title="PayLink Connect (Simple)")
+app = FastAPI(title="PayLink Connect (Flow A)")
 templates = Jinja2Templates(directory=TEMPLATES_DIR)
 
 if os.path.isdir(STATIC_DIR):
     app.mount("/static", StaticFiles(directory=STATIC_DIR), name="static")
+
+
+def require_admin(request: Request) -> None:
+    key = request.query_params.get("key", "")
+    if not ADMIN_KEY or key != ADMIN_KEY:
+        raise HTTPException(status_code=403, detail="Forbidden")
+
+
+# ============================================================
+# QR (internal PNG)
+# ============================================================
+
+@app.get("/qr/{slug}.png")
+def qr_png(slug: str):
+    slug = (slug or "").strip().lower()
+    if not slug:
+        raise HTTPException(404, "Not found")
+    url = f"{BASE_URL}/p/{slug}"
+
+    img = qrcode.make(url)
+    buf = io.BytesIO()
+    img.save(buf, format="PNG")
+    return Response(content=buf.getvalue(), media_type="image/png")
 
 
 # ============================================================
@@ -42,9 +69,7 @@ def db_conn() -> sqlite3.Connection:
 
 
 def init_db() -> None:
-    """
-    Idempotent init + safe "migrations" for SQLite.
-    """
+    """Idempotent init + safe SQLite migrations."""
     with db_conn() as conn:
         conn.execute(
             """
@@ -59,17 +84,32 @@ def init_db() -> None:
               amount1 INTEGER DEFAULT 25,
               amount2 INTEGER DEFAULT 49,
               amount3 INTEGER DEFAULT 79,
+
+              -- admin fields
               payment_link TEXT,
+              photo_url TEXT,
+              maps_url TEXT,
+              headline TEXT,
+              whatsapp_message TEXT,
+
               created_at TEXT
             );
             """
         )
         conn.execute("CREATE INDEX IF NOT EXISTS idx_merchants_slug ON merchants(slug);")
 
-        # Safe migration if table existed before we added payment_link
         cols = [r["name"] for r in conn.execute("PRAGMA table_info(merchants)").fetchall()]
-        if "payment_link" not in cols:
-            conn.execute("ALTER TABLE merchants ADD COLUMN payment_link TEXT;")
+
+        def add_col(name: str):
+            if name not in cols:
+                conn.execute(f"ALTER TABLE merchants ADD COLUMN {name} TEXT;")
+
+        # backward compatible migrations
+        add_col("payment_link")
+        add_col("photo_url")
+        add_col("maps_url")
+        add_col("headline")
+        add_col("whatsapp_message")
 
 
 init_db()
@@ -81,9 +121,8 @@ init_db()
 
 def slugify(s: str) -> str:
     s = (s or "").strip().lower()
-    s = re.sub(r"[^\w\s-]", "", s, flags=re.UNICODE)
-    s = re.sub(r"[\s_-]+", "-", s, flags=re.UNICODE)
-    s = re.sub(r"^-+|-+$", "", s)
+    s = re.sub(r"[^a-z0-9\s-]", "", s)
+    s = re.sub(r"[\s_-]+", "-", s).strip("-")
     return s or "merchant"
 
 
@@ -104,20 +143,18 @@ def unique_slug(base: str) -> str:
 
 def norm_whatsapp(w: str) -> str:
     w = (w or "").strip()
-    # Keep digits only (LATAM numbers often start with country code, e.g., 505...)
     w = re.sub(r"[^\d]", "", w)
-    # If user enters leading 00, convert to +
     if w.startswith("00"):
         w = w[2:]
     return w
 
 
-def get_merchant_by_id(mid: int) -> Optional[sqlite3.Row]:
+def get_merchant_by_id(mid: int):
     with db_conn() as conn:
         return conn.execute("SELECT * FROM merchants WHERE id=?", (mid,)).fetchone()
 
 
-def get_merchant_by_slug(slug: str) -> Optional[sqlite3.Row]:
+def get_merchant_by_slug(slug: str):
     with db_conn() as conn:
         return conn.execute("SELECT * FROM merchants WHERE slug=?", (slug,)).fetchone()
 
@@ -133,6 +170,10 @@ def landing(request: Request):
         {"request": request, "base_url": BASE_URL, "env": APP_ENV},
     )
 
+
+# ----------------------------
+# Flow A (client)
+# ----------------------------
 
 @app.get("/start", response_class=HTMLResponse)
 def start_form(request: Request):
@@ -182,13 +223,19 @@ def start_create(
                 datetime.utcnow().isoformat(),
             ),
         )
-        merchant_id = cur.lastrowid
+        merchant_id = int(cur.lastrowid)
 
-    return RedirectResponse(url=f"/connect/{merchant_id}", status_code=303)
+    # client goes to public page
+    return RedirectResponse(url=f"/p/{slug}", status_code=303)
 
+
+# ----------------------------
+# Admin (protected)
+# ----------------------------
 
 @app.get("/connect/{merchant_id:int}", response_class=HTMLResponse)
 def connect_page(request: Request, merchant_id: int):
+    require_admin(request)
     merchant = get_merchant_by_id(merchant_id)
     if not merchant:
         raise HTTPException(404, "Merchant introuvable")
@@ -200,31 +247,49 @@ def connect_page(request: Request, merchant_id: int):
 
 @app.post("/connect/{merchant_id:int}/save")
 def connect_save(
+    request: Request,
     merchant_id: int,
     payment_link: str = Form(""),
+    photo_url: str = Form(""),
+    maps_url: str = Form(""),
+    headline: str = Form(""),
+    whatsapp_message: str = Form(""),
 ):
+    require_admin(request)
     merchant = get_merchant_by_id(merchant_id)
     if not merchant:
         raise HTTPException(404, "Merchant introuvable")
 
     payment_link = (payment_link or "").strip()
+    photo_url = (photo_url or "").strip()
+    maps_url = (maps_url or "").strip()
+    headline = (headline or "").strip()
+    whatsapp_message = (whatsapp_message or "").strip()
 
-    # Light validation: accept Stripe Payment Link / Checkout URLs
-    if payment_link and not re.match(r"^https://", payment_link):
+    if payment_link and not payment_link.startswith("https://"):
         raise HTTPException(400, "Le lien doit commencer par https://")
-    if payment_link and ("stripe.com" not in payment_link):
-        # allow but warn? Here we keep strict enough to avoid mistakes.
-        raise HTTPException(400, "Le lien doit être un lien Stripe (buy.stripe.com / checkout.stripe.com)")
 
     with db_conn() as conn:
-        conn.execute("UPDATE merchants SET payment_link=? WHERE id=?", (payment_link, merchant_id))
+        conn.execute(
+            """
+            UPDATE merchants
+            SET payment_link=?, photo_url=?, maps_url=?, headline=?, whatsapp_message=?
+            WHERE id=?
+            """,
+            (payment_link, photo_url, maps_url, headline, whatsapp_message, merchant_id),
+        )
 
-    return RedirectResponse(url=f"/connect/{merchant_id}", status_code=303)
+    key = request.query_params.get("key", "")
+    return RedirectResponse(url=f"/connect/{merchant_id}?key={key}", status_code=303)
 
+
+# ----------------------------
+# Public page
+# ----------------------------
 
 @app.get("/p/{slug}", response_class=HTMLResponse)
 def paypage(request: Request, slug: str):
-    merchant = get_merchant_by_slug(slug)
+    merchant = get_merchant_by_slug((slug or "").lower().strip())
     if not merchant:
         raise HTTPException(404, "Page introuvable")
     return templates.TemplateResponse(
