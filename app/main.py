@@ -1,11 +1,12 @@
 import os
 import re
 import io
+import html
 import sqlite3
 from datetime import datetime
-from typing import Optional
+from typing import Optional, List, Dict
 
-from fastapi import FastAPI, Request, Form, HTTPException
+from fastapi import FastAPI, Request, Form, HTTPException, UploadFile, File
 from fastapi.responses import HTMLResponse, RedirectResponse, Response
 from fastapi.staticfiles import StaticFiles
 from fastapi.templating import Jinja2Templates
@@ -22,6 +23,7 @@ PROJECT_ROOT = os.path.dirname(PROJECT_ROOT)  # /app -> project root
 DB_PATH = os.path.join(PROJECT_ROOT, "db", "paylink.db")
 TEMPLATES_DIR = os.path.join(PROJECT_ROOT, "templates")
 STATIC_DIR = os.path.join(PROJECT_ROOT, "static")
+UPLOADS_DIR = os.path.join(STATIC_DIR, "uploads")
 
 BASE_URL = os.getenv("BASE_URL", "http://127.0.0.1:8000").rstrip("/")
 APP_ENV = os.getenv("APP_ENV", "dev").lower().strip()
@@ -31,6 +33,7 @@ app = FastAPI(title="PayLink Connect (Flow A)")
 templates = Jinja2Templates(directory=TEMPLATES_DIR)
 
 if os.path.isdir(STATIC_DIR):
+    os.makedirs(UPLOADS_DIR, exist_ok=True)
     app.mount("/static", StaticFiles(directory=STATIC_DIR), name="static")
 
 
@@ -100,9 +103,9 @@ def init_db() -> None:
 
         cols = [r["name"] for r in conn.execute("PRAGMA table_info(merchants)").fetchall()]
 
-        def add_col(name: str):
+        def add_col(name: str, col_def: str = "TEXT"):
             if name not in cols:
-                conn.execute(f"ALTER TABLE merchants ADD COLUMN {name} TEXT;")
+                conn.execute(f"ALTER TABLE merchants ADD COLUMN {name} {col_def};")
 
         # backward compatible migrations
         add_col("payment_link")
@@ -110,7 +113,6 @@ def init_db() -> None:
         add_col("maps_url")
         add_col("headline")
         add_col("whatsapp_message")
-
 
 init_db()
 
@@ -149,6 +151,13 @@ def norm_whatsapp(w: str) -> str:
     return w
 
 
+def safe_filename(name: str) -> str:
+    name = (name or "").strip().lower()
+    name = re.sub(r"[^a-z0-9\.\-_]+", "-", name)
+    name = name.strip("-")
+    return name or "file"
+
+
 def get_merchant_by_id(mid: int):
     with db_conn() as conn:
         return conn.execute("SELECT * FROM merchants WHERE id=?", (mid,)).fetchone()
@@ -157,6 +166,14 @@ def get_merchant_by_id(mid: int):
 def get_merchant_by_slug(slug: str):
     with db_conn() as conn:
         return conn.execute("SELECT * FROM merchants WHERE slug=?", (slug,)).fetchone()
+
+
+def list_merchants(limit: int = 500):
+    with db_conn() as conn:
+        return conn.execute(
+            "SELECT * FROM merchants ORDER BY datetime(created_at) DESC, id DESC LIMIT ?",
+            (int(limit),),
+        ).fetchall()
 
 
 # ============================================================
@@ -202,7 +219,7 @@ def start_create(
     whatsapp_norm = norm_whatsapp(whatsapp)
 
     with db_conn() as conn:
-        cur = conn.execute(
+        conn.execute(
             """
             INSERT INTO merchants(
               slug,business_name,contact_name,whatsapp,country,currency,
@@ -223,10 +240,110 @@ def start_create(
                 datetime.utcnow().isoformat(),
             ),
         )
-        merchant_id = int(cur.lastrowid)
 
     # client goes to public page
     return RedirectResponse(url=f"/p/{slug}", status_code=303)
+
+
+# ----------------------------
+# Admin: LIST (protected)
+# ----------------------------
+
+@app.get("/admin", response_class=HTMLResponse)
+def admin_home(request: Request):
+    require_admin(request)
+    key = request.query_params.get("key", "")
+    rows = list_merchants()
+
+    # Page HTML simple (pas besoin de template)
+    items_html = []
+    for r in rows:
+        m = dict(r)
+        mid = m.get("id")
+        slug = m.get("slug") or ""
+        business = m.get("business_name") or ""
+        created = m.get("created_at") or ""
+        photo = m.get("photo_url") or ""
+        pay = m.get("payment_link") or ""
+
+        items_html.append(f"""
+          <tr>
+            <td style="padding:10px;border-bottom:1px solid #2a2f44;">{mid}</td>
+            <td style="padding:10px;border-bottom:1px solid #2a2f44;"><code>{html.escape(slug)}</code></td>
+            <td style="padding:10px;border-bottom:1px solid #2a2f44;">{html.escape(business)}</td>
+            <td style="padding:10px;border-bottom:1px solid #2a2f44;">{html.escape(created[:19].replace("T"," "))}</td>
+            <td style="padding:10px;border-bottom:1px solid #2a2f44;">
+              {"✅" if pay else "—"}
+            </td>
+            <td style="padding:10px;border-bottom:1px solid #2a2f44;">
+              {"✅" if photo else "—"}
+            </td>
+            <td style="padding:10px;border-bottom:1px solid #2a2f44;white-space:nowrap;">
+              <a href="/p/{html.escape(slug)}" target="_blank">Public</a>
+              &nbsp;|&nbsp;
+              <a href="/connect/{mid}?key={html.escape(key)}" target="_blank">Connect</a>
+            </td>
+          </tr>
+        """)
+
+    page = f"""
+    <!doctype html>
+    <html lang="fr">
+    <head>
+      <meta charset="utf-8"/>
+      <meta name="viewport" content="width=device-width,initial-scale=1"/>
+      <title>PayLink Admin</title>
+      <style>
+        body{{font-family:system-ui,-apple-system,Segoe UI,Roboto,Arial;margin:0;background:#0b1020;color:#e8ecff}}
+        .wrap{{max-width:1100px;margin:0 auto;padding:22px}}
+        .card{{background:rgba(255,255,255,.06);border:1px solid rgba(255,255,255,.12);border-radius:16px;padding:16px}}
+        table{{width:100%;border-collapse:collapse}}
+        th{{text-align:left;font-size:12px;opacity:.8;padding:10px;border-bottom:1px solid #2a2f44}}
+        a{{color:#9db4ff;text-decoration:none}}
+        a:hover{{text-decoration:underline}}
+        .top{{display:flex;gap:10px;justify-content:space-between;align-items:center;flex-wrap:wrap;margin-bottom:12px}}
+        .btn{{display:inline-block;padding:10px 12px;border-radius:12px;border:1px solid rgba(255,255,255,.18);background:rgba(255,255,255,.08);color:#fff;text-decoration:none}}
+      </style>
+    </head>
+    <body>
+      <div class="wrap">
+        <div class="top">
+          <div>
+            <h2 style="margin:0 0 6px;">Admin — toutes les créations</h2>
+            <div style="opacity:.8;font-size:13px;">URL client : <code>/start</code> • Pages publiques : <code>/p/&lt;slug&gt;</code></div>
+          </div>
+          <div>
+            <a class="btn" href="/start" target="_blank">Ouvrir /start</a>
+          </div>
+        </div>
+
+        <div class="card">
+          <table>
+            <thead>
+              <tr>
+                <th>ID</th>
+                <th>Slug</th>
+                <th>Business</th>
+                <th>Créé</th>
+                <th>Stripe</th>
+                <th>Photo</th>
+                <th>Actions</th>
+              </tr>
+            </thead>
+            <tbody>
+              {''.join(items_html) if items_html else '<tr><td colspan="7" style="padding:12px;">Aucune création.</td></tr>'}
+            </tbody>
+          </table>
+        </div>
+
+        <div style="opacity:.75;font-size:12px;margin-top:10px;">
+          Astuce : sauvegarde ce lien admin dans tes favoris → <code>/admin?key=TA_CLE</code>
+        </div>
+      </div>
+    </body>
+    </html>
+    """
+    return HTMLResponse(page)
 
 
 # ----------------------------
@@ -246,7 +363,7 @@ def connect_page(request: Request, merchant_id: int):
 
 
 @app.post("/connect/{merchant_id:int}/save")
-def connect_save(
+async def connect_save(
     request: Request,
     merchant_id: int,
     payment_link: str = Form(""),
@@ -254,6 +371,7 @@ def connect_save(
     maps_url: str = Form(""),
     headline: str = Form(""),
     whatsapp_message: str = Form(""),
+    photo_file: UploadFile = File(None),  # upload optionnel
 ):
     require_admin(request)
     merchant = get_merchant_by_id(merchant_id)
@@ -267,7 +385,33 @@ def connect_save(
     whatsapp_message = (whatsapp_message or "").strip()
 
     if payment_link and not payment_link.startswith("https://"):
-        raise HTTPException(400, "Le lien doit commencer par https://")
+        raise HTTPException(400, "Le lien Stripe doit commencer par https://")
+
+    # Upload photo (optionnel) => stocké en /static/uploads/xxx.ext
+    if photo_file and photo_file.filename:
+        os.makedirs(UPLOADS_DIR, exist_ok=True)
+        filename = safe_filename(photo_file.filename)
+        ext = os.path.splitext(filename)[1].lower()
+        if ext not in (".jpg", ".jpeg", ".png", ".webp"):
+            raise HTTPException(400, "Photo invalide. Formats acceptés: JPG, PNG, WEBP.")
+
+        # nom stable: slug + timestamp
+        slug = (merchant["slug"] if isinstance(merchant, sqlite3.Row) else dict(merchant).get("slug")) or "merchant"
+        ts = datetime.utcnow().strftime("%Y%m%d%H%M%S")
+        final_name = f"{safe_filename(slug)}-{ts}{ext}"
+        out_path = os.path.join(UPLOADS_DIR, final_name)
+
+        content = await photo_file.read()
+        if not content:
+            raise HTTPException(400, "Fichier photo vide.")
+        if len(content) > 6 * 1024 * 1024:
+            raise HTTPException(400, "Photo trop lourde (max 6 Mo).")
+
+        with open(out_path, "wb") as f:
+            f.write(content)
+
+        # On force photo_url vers le fichier uploadé
+        photo_url = f"/static/uploads/{final_name}"
 
     with db_conn() as conn:
         conn.execute(
@@ -320,3 +464,4 @@ def contact(request: Request):
 @app.get("/success", response_class=HTMLResponse)
 def success(request: Request):
     return templates.TemplateResponse("success.html", {"request": request, "base_url": BASE_URL})
+
