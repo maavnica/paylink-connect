@@ -122,10 +122,22 @@
       opacity: .85;
       pointer-events:none;
     }
+
+    /* ✅ POLISH LOGO/PHOTO */
     .avatar img{
-      width:100%; height:100%; object-fit:cover;
-      position:relative; z-index:1;
+      width:100%;
+      height:100%;
+      position:relative;
+      z-index:1;
+
+      /* Cover crop isn't great for logos. Contain keeps full logo. */
+      object-fit: contain;
+      padding: 10px;
+
+      /* helps PNG logos look clean on dark bg */
+      background: rgba(0,0,0,.12);
     }
+
     .h-title{margin:0; font-size:22px; line-height:1.1}
     .h-sub{margin:6px 0 0; color:var(--muted); font-size:13px}
     .badges{display:flex; gap:8px; flex-wrap:wrap; margin-top:10px}
@@ -288,6 +300,7 @@
             {% if merchant.photo_url %}
               <img src="{{ merchant.photo_url }}" alt="Foto" />
             {% else %}
+              <!-- fallback: keeps demo nice even without photo -->
               <img src="https://images.unsplash.com/photo-1520975682031-a07f84c73372?auto=format&fit=crop&w=300&q=70" alt="Foto" />
             {% endif %}
           </div>
@@ -354,7 +367,7 @@
         </div>
       </div>
 
-      <!-- RIGHT: amount selector (visual WOW) -->
+      <!-- RIGHT: amount selector -->
       <div class="card">
         <h3 style="margin:0 0 6px; font-size:18px" data-i18n="choose_amount">Elegí tu monto</h3>
 
@@ -377,6 +390,9 @@
         <div style="margin-top:14px; border-top:1px solid rgba(255,255,255,.12); padding-top:14px;">
           <div class="hint" data-i18n="use_case">
             Ideal para cobrar por WhatsApp, Facebook o SMS en segundos.
+          </div>
+          <div class="hint" style="margin-top:8px; opacity:.9;">
+            <span style="opacity:.85;">Moneda:</span> <b>{{ merchant.currency or "USD" }}</b>
           </div>
         </div>
       </div>
@@ -455,6 +471,7 @@
       document.getElementById("btnES").classList.toggle("active", lang === "es");
       document.getElementById("btnFR").classList.toggle("active", lang === "fr");
       localStorage.setItem("paylink_lang", lang);
+      updateWhatsAppPrefill();
     }
 
     const savedLang = localStorage.getItem("paylink_lang") || "es";
@@ -462,7 +479,7 @@
     document.getElementById("btnES").addEventListener("click", () => applyLang("es"));
     document.getElementById("btnFR").addEventListener("click", () => applyLang("fr"));
 
-    // ---------- Amount chips (pure UX; Stripe amount can't be injected into standard Payment Link) ----------
+    // ---------- Amount chips (UX only; Stripe amount can't be injected into standard Payment Link) ----------
     const amountEl = document.getElementById("amount");
     document.querySelectorAll(".chip").forEach(ch => {
       ch.addEventListener("click", () => {
@@ -481,11 +498,12 @@
       const base = waBtn.getAttribute("href");
       if (!base || base === "#") return;
 
-      // message from DB if provided, else default
       const custom = "{{ (merchant.whatsapp_message or '') | replace('\n',' ') | replace('\r',' ') }}".trim();
       const amt = (Number(amountEl.value) || "").toString();
-      const defES = `Hola, quiero información${amt ? " y pagar " + amt + " {{ merchant.currency or 'USD' }}" : ""}.`;
-      const defFR = `Bonjour, je veux une info${amt ? " et payer " + amt + " {{ merchant.currency or 'USD' }}" : ""}.`;
+      const cur = "{{ merchant.currency or 'USD' }}";
+
+      const defES = `Hola, quiero información${amt ? " y pagar " + amt + " " + cur : ""}.`;
+      const defFR = `Bonjour, je veux une info${amt ? " et payer " + amt + " " + cur : ""}.`;
 
       const lang = localStorage.getItem("paylink_lang") || "es";
       const msg = custom || (lang === "fr" ? defFR : defES);
@@ -520,23 +538,15 @@
       } catch(e){}
     });
 
-    // ---------- Minimal QR (no library): quick & good-enough QR via external image fallback ----------
-    // If you want 100% offline QR, add a tiny QR lib; for now we draw using an image service.
+    // ---------- QR modal (internal PNG only; no canvas, no external service) ----------
     const qrBtn = document.getElementById("qrBtn");
     const qrModal = document.getElementById("qrModal");
     const qrClose = document.getElementById("qrClose");
-    const canvas = document.getElementById("qrCanvas");
-    const ctx = canvas.getContext("2d");
-
-    function drawQr(){
-  const img = document.getElementById('qrImg');
-  if(img){ img.src = `/qr/{{ merchant.slug }}.png`; }
-}
-;
-    }
 
     qrBtn?.addEventListener("click", () => {
-      drawQr();
+      // ensure fresh
+      const img = document.getElementById("qrImg");
+      if (img) img.src = `/qr/{{ merchant.slug }}.png?ts=${Date.now()}`;
       qrModal.classList.add("open");
     });
     qrClose?.addEventListener("click", () => qrModal.classList.remove("open"));
@@ -544,4 +554,5 @@
   </script>
 </body>
 </html>
+
 
