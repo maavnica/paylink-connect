@@ -123,18 +123,14 @@
       pointer-events:none;
     }
 
-    /* ✅ POLISH LOGO/PHOTO */
+    /* ✅ POLISH logo/photo : no crop */
     .avatar img{
       width:100%;
       height:100%;
       position:relative;
       z-index:1;
-
-      /* Cover crop isn't great for logos. Contain keeps full logo. */
       object-fit: contain;
       padding: 10px;
-
-      /* helps PNG logos look clean on dark bg */
       background: rgba(0,0,0,.12);
     }
 
@@ -276,6 +272,19 @@
 </head>
 
 <body>
+
+  {# -------------------------------------------------------------------
+     Robust field mapping:
+     some versions store Stripe link as payment_link, stripe_link, stripe_url...
+     We accept all to avoid "Pago no disponible" when link exists.
+     ------------------------------------------------------------------- #}
+
+  {% set pay_link = (merchant.payment_link or merchant.get('payment_link') or merchant.get('stripe_link') or merchant.get('stripe_url') or merchant.get('stripe_payment_link') or '') %}
+  {% set photo = (merchant.photo_url or merchant.get('photo_url') or merchant.get('photo') or '') %}
+  {% set maps = (merchant.maps_url or merchant.get('maps_url') or merchant.get('map_url') or '') %}
+  {% set wa_raw = (merchant.whatsapp or merchant.get('whatsapp') or '') %}
+  {% set wa = (wa_raw|string)|replace('+','') %}
+
   <div class="wrap">
     <div class="topbar">
       <div class="brand">
@@ -297,10 +306,9 @@
       <div class="card">
         <div class="hero">
           <div class="avatar">
-            {% if merchant.photo_url %}
-              <img src="{{ merchant.photo_url }}" alt="Foto" />
+            {% if photo %}
+              <img src="{{ photo }}" alt="Foto" />
             {% else %}
-              <!-- fallback: keeps demo nice even without photo -->
               <img src="https://images.unsplash.com/photo-1520975682031-a07f84c73372?auto=format&fit=crop&w=300&q=70" alt="Foto" />
             {% endif %}
           </div>
@@ -319,7 +327,6 @@
         </div>
 
         <div class="actions">
-          {% set wa = (merchant.whatsapp or "").replace("+","") %}
           <a id="waBtn" class="btn wa"
              href="{% if wa %}https://wa.me/{{ wa }}{% else %}#{% endif %}"
              {% if not wa %}onclick="return false"{% endif %}
@@ -327,8 +334,8 @@
             💬 <span data-i18n="whatsapp">Hablar por WhatsApp</span>
           </a>
 
-          {% if merchant.payment_link %}
-          <a id="payBtn" class="btn pay" href="{{ merchant.payment_link }}" target="_blank" rel="noopener">
+          {% if pay_link %}
+          <a id="payBtn" class="btn pay" href="{{ pay_link }}" target="_blank" rel="noopener">
             💳 <span data-i18n="pay">Pagar ahora</span>
           </a>
           {% else %}
@@ -337,20 +344,20 @@
           </div>
           {% endif %}
 
-          {% if merchant.maps_url %}
-          <a class="btn map" href="{{ merchant.maps_url }}" target="_blank" rel="noopener">
+          {% if maps %}
+          <a class="btn map" href="{{ maps }}" target="_blank" rel="noopener">
             📍 <span data-i18n="maps">Ver ubicación</span>
           </a>
           {% endif %}
         </div>
 
-        {% if not merchant.payment_link %}
+        {% if not pay_link %}
         <div class="hint" style="margin-top:10px" data-i18n="missing_link">
           Este PayLink todavía no está listo para cobrar. Falta agregar el enlace Stripe.
         </div>
         {% else %}
-        <div class="hint" style="margin-top:10px" data-i18n="no_hold">
-          Procesado por Stripe. Maavnica no retiene tu dinero.
+        <div class="hint" style="margin-top:10px" data-i18n="stripe_note">
+          Pagos procesados por Stripe. Maavnica no retiene tu dinero.
         </div>
         {% endif %}
 
@@ -423,7 +430,7 @@
         pay_disabled: "Pago no disponible",
         maps: "Ver ubicación",
         missing_link: "Este PayLink todavía no está listo para cobrar. Falta agregar el enlace Stripe.",
-        no_hold: "Procesado por Stripe. Maavnica no retiene tu dinero.",
+        stripe_note: "Pagos procesados por Stripe. Maavnica no retiene tu dinero.",
         share: "Compartir",
         copy: "Copiar enlace",
         qr: "Mostrar QR",
@@ -446,7 +453,7 @@
         pay_disabled: "Paiement indisponible",
         maps: "Voir l’emplacement",
         missing_link: "Ce PayLink n’est pas encore prêt. Il manque le lien Stripe.",
-        no_hold: "Traitée par Stripe. Maavnica ne retient pas votre argent.",
+        stripe_note: "Paiements traités par Stripe. Maavnica ne retient pas votre argent.",
         share: "Partager",
         copy: "Copier le lien",
         qr: "Afficher le QR",
@@ -544,7 +551,6 @@
     const qrClose = document.getElementById("qrClose");
 
     qrBtn?.addEventListener("click", () => {
-      // ensure fresh
       const img = document.getElementById("qrImg");
       if (img) img.src = `/qr/{{ merchant.slug }}.png?ts=${Date.now()}`;
       qrModal.classList.add("open");
@@ -554,5 +560,6 @@
   </script>
 </body>
 </html>
+
 
 
