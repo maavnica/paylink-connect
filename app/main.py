@@ -110,7 +110,8 @@ def start_create(
     business_name: str = Form(...),
     whatsapp: str = Form(...),
     currency: str = Form(...),
-    amounts: str = Form(...)
+   amounts: str = Form("")
+
 ):
     slug = business_name.lower().replace(" ", "").replace("/", "")[:30]
 
