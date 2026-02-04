@@ -23,26 +23,29 @@ import qrcode
 DATABASE_URL = os.getenv("DATABASE_URL", "").strip()
 ADMIN_KEY = os.getenv("ADMIN_KEY", "").strip()
 BASE_URL_ENV = os.getenv("BASE_URL", "").strip()  # optionnel
+SQLITE_DIR = os.getenv("SQLITE_DIR", "/tmp").strip() or "/tmp"  # Render-safe
 
 # Paths (robuste sur Render / en local)
 PROJECT_ROOT = Path(__file__).resolve().parents[1]  # .../paylink_connect
 TEMPLATES_DIR = PROJECT_ROOT / "templates"
 STATIC_DIR = PROJECT_ROOT / "static"
-DB_DIR = PROJECT_ROOT / "db"
-DB_DIR.mkdir(parents=True, exist_ok=True)
 
-# IMPORTANT: si DATABASE_URL existe => Postgres/Neon. Sinon => SQLite (dev)
-# - Sur Render, le "working directory" peut varier => on évite les chemins relatifs.
+# DB path
+# - Si DATABASE_URL => Postgres/Neon
+# - Sinon => SQLite dans SQLITE_DIR (par défaut /tmp sur Render)
 if DATABASE_URL:
     DB_URL = DATABASE_URL
-    print("🗄️ DB = Postgres/Neon")
+    print("🗄️ DB = Postgres/Neon (DATABASE_URL)")
     engine = create_engine(DB_URL, pool_pre_ping=True)
 else:
-    sqlite_path = DB_DIR / "paylink.db"
+    db_dir = Path(SQLITE_DIR)
+    db_dir.mkdir(parents=True, exist_ok=True)
+    sqlite_path = db_dir / "paylink.db"
     DB_URL = f"sqlite:///{sqlite_path.as_posix()}"
-    print("🗄️ DB = SQLite local", sqlite_path)
+    print("🗄️ DB = SQLite", sqlite_path)
     engine = create_engine(DB_URL, connect_args={"check_same_thread": False})
-SessionLocal = sessionmaker(bind=engine, autoflush=False)
+
+SessionLocal = sessionmaker(bind=engine, autoflush=False, autocommit=False)
 Base = declarative_base()
 
 
@@ -66,6 +69,8 @@ class Merchant(Base):
 
 
 app = FastAPI()
+
+# Static/templates (chemins absolus)
 app.mount("/static", StaticFiles(directory=str(STATIC_DIR)), name="static")
 templates = Jinja2Templates(directory=str(TEMPLATES_DIR))
 
@@ -80,7 +85,8 @@ def startup():
 # HELPERS
 # =========================================================
 
-def db():
+def get_db():
+    """Retourne une session SQLAlchemy."""
     return SessionLocal()
 
 
@@ -98,7 +104,6 @@ def slugify(text: str) -> str:
 
 
 def unique_slug(session, base: str) -> str:
-    # évite collision sur unique(slug)
     slug = base
     i = 2
     while session.query(Merchant).filter_by(slug=slug).first() is not None:
@@ -109,7 +114,7 @@ def unique_slug(session, base: str) -> str:
 
 def parse_amounts(amounts: str) -> str:
     """
-    On stocke en string simple (comme aujourd'hui) pour ne rien casser.
+    On stocke en string simple.
     Formats acceptés: "25,49,79" / "25 49 79" / "25|49|79"
     """
     if not amounts:
@@ -117,7 +122,7 @@ def parse_amounts(amounts: str) -> str:
     cleaned = re.sub(r"[^\d,| ]", "", amounts)
     parts = re.split(r"[,| ]+", cleaned.strip())
     parts = [p for p in parts if p.isdigit()]
-    return ",".join(parts[:6])  # limite sécurité
+    return ",".join(parts[:6])
 
 
 # =========================================================
@@ -140,68 +145,76 @@ def start_page(request: Request):
 def start_create(
     business_name: str = Form(...),
     whatsapp: str = Form(...),
-    currency: str = Form("USD"),           # ✅ plus de blocage si le champ manque
-    amounts: str = Form(""),               # ✅ optionnel
+    currency: str = Form("USD"),
+    amounts: str = Form(""),
 ):
-    session = db()
+    session = get_db()
+    try:
+        base = slugify(business_name)
+        slug = unique_slug(session, base)
 
-    base = slugify(business_name)
-    slug = unique_slug(session, base)
+        merchant = Merchant(
+            slug=slug,
+            business_name=business_name.strip(),
+            whatsapp=whatsapp.strip(),
+            currency=(currency or "USD").strip().upper(),
+            amounts=parse_amounts(amounts),
+        )
+        session.add(merchant)
+        session.commit()
+        session.refresh(merchant)
 
-    merchant = Merchant(
-        slug=slug,
-        business_name=business_name.strip(),
-        whatsapp=whatsapp.strip(),
-        currency=(currency or "USD").strip().upper(),
-        amounts=parse_amounts(amounts),
-    )
-    session.add(merchant)
-    session.commit()
-    session.refresh(merchant)
-    session.close()
-
-    print(f"✅ Merchant créé : {merchant.id} / {merchant.slug}")
-
-    # ✅ après start, on renvoie vers la page publique (plus logique que /success vide)
-    return RedirectResponse(f"/p/{merchant.slug}", status_code=302)
+        print(f"✅ Merchant créé : {merchant.id} / {merchant.slug}")
+        return RedirectResponse(f"/p/{merchant.slug}", status_code=302)
+    finally:
+        session.close()
 
 
 # ---------- PAGE PUBLIQUE ----------
 @app.get("/p/{slug}", response_class=HTMLResponse)
 def public_page(request: Request, slug: str):
-    session = db()
-    merchant = session.query(Merchant).filter_by(slug=slug).first()
-    session.close()
+    session = get_db()
+    try:
+        merchant = session.query(Merchant).filter_by(slug=slug).first()
+        if not merchant:
+            raise HTTPException(404, "Merchant introuvable")
 
-    if not merchant:
-        raise HTTPException(404, "Merchant introuvable")
-
-    return templates.TemplateResponse("paypage.html", {"request": request, "merchant": merchant})
+        return templates.TemplateResponse(
+            "paypage.html",
+            {"request": request, "merchant": merchant},
+        )
+    except Exception as e:
+        # Log utile dans Render si 500
+        print("❌ Erreur /p/{slug} :", slug, "=>", repr(e))
+        raise
+    finally:
+        session.close()
 
 
 # ---------- ADMIN LIST ----------
 @app.get("/admin", response_class=HTMLResponse)
 def admin_dashboard(request: Request):
     require_admin(request)
-    session = db()
-    merchants = session.query(Merchant).order_by(Merchant.id.desc()).all()
-    session.close()
-
-    return templates.TemplateResponse("admin.html", {"request": request, "merchants": merchants})
+    session = get_db()
+    try:
+        merchants = session.query(Merchant).order_by(Merchant.id.desc()).all()
+        return templates.TemplateResponse("admin.html", {"request": request, "merchants": merchants})
+    finally:
+        session.close()
 
 
 # ---------- ADMIN CONNECT ----------
 @app.get("/connect/{merchant_id}", response_class=HTMLResponse)
 def connect_page(request: Request, merchant_id: int):
     require_admin(request)
-    session = db()
-    merchant = session.get(Merchant, merchant_id)
-    session.close()
-
-    if not merchant:
-        raise HTTPException(404, "Merchant introuvable")
-
-    return templates.TemplateResponse("connect.html", {"request": request, "merchant": merchant})
+    session = get_db()
+    try:
+        merchant = session.get(Merchant, merchant_id)
+        if not merchant:
+            raise HTTPException(404, "Merchant introuvable")
+        return templates.TemplateResponse("connect.html", {"request": request, "merchant": merchant})
+    finally:
+        session.close()
 
 
 @app.post("/connect/{merchant_id}/save")
@@ -214,29 +227,26 @@ def connect_save(
     headline: Optional[str] = Form(None),
 ):
     require_admin(request)
+    session = get_db()
+    try:
+        merchant = session.get(Merchant, merchant_id)
+        if not merchant:
+            raise HTTPException(404, "Merchant introuvable")
 
-    session = db()
-    merchant = session.get(Merchant, merchant_id)
+        merchant.payment_link = (payment_link or "").strip() or None
+        merchant.photo_url = (photo_url or "").strip() or None
+        merchant.maps_url = (maps_url or "").strip() or None
+        merchant.headline = (headline or "").strip() or None
 
-    if not merchant:
+        session.commit()
+        return RedirectResponse(f"/connect/{merchant_id}?key={ADMIN_KEY}", status_code=302)
+    finally:
         session.close()
-        raise HTTPException(404, "Merchant introuvable")
-
-    merchant.payment_link = (payment_link or "").strip() or None
-    merchant.photo_url = (photo_url or "").strip() or None
-    merchant.maps_url = (maps_url or "").strip() or None
-    merchant.headline = (headline or "").strip() or None
-
-    session.commit()
-    session.close()
-
-    return RedirectResponse(f"/connect/{merchant_id}?key={ADMIN_KEY}", status_code=302)
 
 
 # ---------- QR INTERNE ----------
 @app.get("/qr/{slug}.png")
 def qr_png(request: Request, slug: str):
-    # ✅ si BASE_URL env manquant, on construit depuis la requête Render
     base_url = BASE_URL_ENV.rstrip("/") if BASE_URL_ENV else str(request.base_url).rstrip("/")
     url = f"{base_url}/p/{slug}"
 
@@ -244,6 +254,7 @@ def qr_png(request: Request, slug: str):
     buf = io.BytesIO()
     img.save(buf, format="PNG")
     return Response(content=buf.getvalue(), media_type="image/png")
+
 
 
 
