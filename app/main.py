@@ -3,6 +3,7 @@ import io
 import re
 from datetime import datetime
 from typing import Optional
+from pathlib import Path
 
 from fastapi import FastAPI, Request, Form, HTTPException
 from fastapi.responses import HTMLResponse, RedirectResponse, Response
@@ -23,12 +24,24 @@ DATABASE_URL = os.getenv("DATABASE_URL", "").strip()
 ADMIN_KEY = os.getenv("ADMIN_KEY", "").strip()
 BASE_URL_ENV = os.getenv("BASE_URL", "").strip()  # optionnel
 
+# Paths (robuste sur Render / en local)
+PROJECT_ROOT = Path(__file__).resolve().parents[1]  # .../paylink_connect
+TEMPLATES_DIR = PROJECT_ROOT / "templates"
+STATIC_DIR = PROJECT_ROOT / "static"
+DB_DIR = PROJECT_ROOT / "db"
+DB_DIR.mkdir(parents=True, exist_ok=True)
+
 # IMPORTANT: si DATABASE_URL existe => Postgres/Neon. Sinon => SQLite (dev)
-DB_URL = DATABASE_URL if DATABASE_URL else "sqlite:///./paylink.db"
-
-print("🗄️ DB =", "Postgres/Neon" if DATABASE_URL else "SQLite local")
-
-engine = create_engine(DB_URL, pool_pre_ping=True)
+# - Sur Render, le "working directory" peut varier => on évite les chemins relatifs.
+if DATABASE_URL:
+    DB_URL = DATABASE_URL
+    print("🗄️ DB = Postgres/Neon")
+    engine = create_engine(DB_URL, pool_pre_ping=True)
+else:
+    sqlite_path = DB_DIR / "paylink.db"
+    DB_URL = f"sqlite:///{sqlite_path.as_posix()}"
+    print("🗄️ DB = SQLite local", sqlite_path)
+    engine = create_engine(DB_URL, connect_args={"check_same_thread": False})
 SessionLocal = sessionmaker(bind=engine, autoflush=False)
 Base = declarative_base()
 
@@ -53,8 +66,8 @@ class Merchant(Base):
 
 
 app = FastAPI()
-app.mount("/static", StaticFiles(directory="static"), name="static")
-templates = Jinja2Templates(directory="templates")
+app.mount("/static", StaticFiles(directory=str(STATIC_DIR)), name="static")
+templates = Jinja2Templates(directory=str(TEMPLATES_DIR))
 
 
 @app.on_event("startup")
