@@ -122,8 +122,6 @@
       opacity: .85;
       pointer-events:none;
     }
-
-    /* ✅ POLISH logo/photo : no crop */
     .avatar img{
       width:100%;
       height:100%;
@@ -274,16 +272,22 @@
 <body>
 
   {# -------------------------------------------------------------------
-     Robust field mapping:
-     some versions store Stripe link as payment_link, stripe_link, stripe_url...
-     We accept all to avoid "Pago no disponible" when link exists.
+     SQLAlchemy object safe mapping (NO .get())
+     Model fields: payment_link, photo_url, maps_url, headline, whatsapp, currency, amounts, slug, business_name
      ------------------------------------------------------------------- #}
 
-  {% set pay_link = (merchant.payment_link or merchant.get('payment_link') or merchant.get('stripe_link') or merchant.get('stripe_url') or merchant.get('stripe_payment_link') or '') %}
-  {% set photo = (merchant.photo_url or merchant.get('photo_url') or merchant.get('photo') or '') %}
-  {% set maps = (merchant.maps_url or merchant.get('maps_url') or merchant.get('map_url') or '') %}
-  {% set wa_raw = (merchant.whatsapp or merchant.get('whatsapp') or '') %}
+  {% set pay_link = merchant.payment_link or '' %}
+  {% set photo = merchant.photo_url or '' %}
+  {% set maps = merchant.maps_url or '' %}
+  {% set wa_raw = merchant.whatsapp or '' %}
   {% set wa = (wa_raw|string)|replace('+','') %}
+
+  {# amounts is stored as "25,49,79" (string) #}
+  {% set _amounts_raw = merchant.amounts or '' %}
+  {% set _amounts_list = _amounts_raw.split(',') if _amounts_raw else [] %}
+  {% set a1 = (_amounts_list[0] if _amounts_list|length > 0 and _amounts_list[0] else '25') %}
+  {% set a2 = (_amounts_list[1] if _amounts_list|length > 1 and _amounts_list[1] else '49') %}
+  {% set a3 = (_amounts_list[2] if _amounts_list|length > 2 and _amounts_list[2] else '79') %}
 
   <div class="wrap">
     <div class="topbar">
@@ -380,13 +384,13 @@
 
         <div class="field">
           <div class="label" data-i18n="amount_label">Monto</div>
-          <input id="amount" type="number" min="1" value="{{ merchant.amount1 or 25 }}">
+          <input id="amount" type="number" min="1" value="{{ a1 }}">
         </div>
 
         <div class="chips">
-          <div class="chip" data-v="{{ merchant.amount1 or 25 }}">{{ merchant.amount1 or 25 }}</div>
-          <div class="chip" data-v="{{ merchant.amount2 or 49 }}">{{ merchant.amount2 or 49 }}</div>
-          <div class="chip" data-v="{{ merchant.amount3 or 79 }}">{{ merchant.amount3 or 79 }}</div>
+          <div class="chip" data-v="{{ a1 }}">{{ a1 }}</div>
+          <div class="chip" data-v="{{ a2 }}">{{ a2 }}</div>
+          <div class="chip" data-v="{{ a3 }}">{{ a3 }}</div>
           <div class="chip" data-v="" data-i18n="other">Otro</div>
         </div>
 
@@ -505,7 +509,6 @@
       const base = waBtn.getAttribute("href");
       if (!base || base === "#") return;
 
-      const custom = "{{ (merchant.whatsapp_message or '') | replace('\n',' ') | replace('\r',' ') }}".trim();
       const amt = (Number(amountEl.value) || "").toString();
       const cur = "{{ merchant.currency or 'USD' }}";
 
@@ -513,7 +516,7 @@
       const defFR = `Bonjour, je veux une info${amt ? " et payer " + amt + " " + cur : ""}.`;
 
       const lang = localStorage.getItem("paylink_lang") || "es";
-      const msg = custom || (lang === "fr" ? defFR : defES);
+      const msg = (lang === "fr" ? defFR : defES);
 
       const url = base.split("?")[0] + "?text=" + encodeURIComponent(msg);
       waBtn.setAttribute("href", url);
@@ -545,7 +548,7 @@
       } catch(e){}
     });
 
-    // ---------- QR modal (internal PNG only; no canvas, no external service) ----------
+    // ---------- QR modal ----------
     const qrBtn = document.getElementById("qrBtn");
     const qrModal = document.getElementById("qrModal");
     const qrClose = document.getElementById("qrClose");
@@ -560,6 +563,7 @@
   </script>
 </body>
 </html>
+
 
 
 
