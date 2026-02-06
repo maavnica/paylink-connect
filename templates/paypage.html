@@ -7,62 +7,47 @@
 
   <style>
     :root{
-      --bg:#050813;
-      --glass: rgba(255,255,255,.10);
-      --glass2: rgba(255,255,255,.06);
-      --line: rgba(255,255,255,.16);
-      --text: rgba(255,255,255,.93);
-      --muted: rgba(255,255,255,.72);
-      --shadow: 0 18px 60px rgba(0,0,0,.55);
-      --radius: 22px;
+      --bg1:#070A12;
+      --bg2:#0B1220;
+      --card: rgba(255,255,255,.08);
+      --line: rgba(255,255,255,.14);
+      --text: rgba(255,255,255,.92);
+      --muted: rgba(255,255,255,.70);
+      --shadow: 0 22px 70px rgba(0,0,0,.55);
+      --r: 22px;
 
-      --wa: #22c55e;
-      --pay: #2DB2FF;
-      --map: #f59e0b;
-      --hot: #a855f7;
+      --primary:#2DB2FF;   /* paiement */
+      --primary2:#A855F7;  /* accent */
+      --wa:#22c55e;        /* WhatsApp */
     }
+
     *{box-sizing:border-box}
     body{
-      margin:0; color:var(--text);
-      font-family: ui-sans-serif, system-ui, -apple-system, Segoe UI, Roboto, Helvetica, Arial;
+      margin:0;
       min-height:100vh;
+      color:var(--text);
+      font-family: ui-sans-serif, system-ui, -apple-system, Segoe UI, Roboto, Helvetica, Arial;
       background:
-        radial-gradient(1100px 650px at 12% 12%, rgba(34,197,94,.28), transparent 60%),
-        radial-gradient(900px 600px at 82% 18%, rgba(45,178,255,.28), transparent 60%),
-        radial-gradient(900px 650px at 55% 92%, rgba(245,158,11,.22), transparent 60%),
-        radial-gradient(1100px 700px at 92% 88%, rgba(168,85,247,.18), transparent 60%),
-        var(--bg);
-      padding: 20px 16px 36px;
+        radial-gradient(1200px 700px at 15% 12%, rgba(45,178,255,.22), transparent 55%),
+        radial-gradient(1000px 650px at 85% 20%, rgba(168,85,247,.18), transparent 55%),
+        radial-gradient(900px 650px at 50% 95%, rgba(34,197,94,.16), transparent 60%),
+        linear-gradient(180deg, var(--bg1), var(--bg2));
+      padding: 26px 16px 34px;
     }
-    .wrap{width:min(1060px,100%); margin:0 auto;}
-    .topbar{
+
+    .wrap{width:min(860px,100%); margin:0 auto;}
+    .top{
       display:flex; align-items:center; justify-content:space-between;
-      gap:12px; margin: 6px 0 16px;
+      gap:12px; margin-bottom:16px;
     }
-    .brand{
-      display:flex; align-items:center; gap:10px;
-      padding:10px 12px;
-      border:1px solid var(--line);
-      border-radius: 999px;
-      background: rgba(0,0,0,.18);
-      backdrop-filter: blur(10px);
-      box-shadow: var(--shadow);
-    }
-    .dot{
-      width:28px; height:28px; border-radius:10px;
-      background: linear-gradient(135deg, var(--wa), var(--pay), var(--hot));
-    }
-    .brand b{letter-spacing:.14em; font-size:12px}
-    .brand span{color:var(--muted); font-size:12px; margin-left:8px}
 
     .lang{
-      display:flex; gap:8px; align-items:center;
+      display:flex; align-items:center; gap:8px;
       padding:10px 12px;
       border-radius: 999px;
       border:1px solid var(--line);
       background: rgba(0,0,0,.18);
       backdrop-filter: blur(10px);
-      box-shadow: var(--shadow);
     }
     .lang button{
       border:1px solid transparent;
@@ -71,156 +56,173 @@
       padding:6px 10px;
       border-radius: 999px;
       cursor:pointer;
-      font-weight: 800;
+      font-weight: 900;
       font-size: 12px;
     }
     .lang button.active{
       color: #061018;
-      background: linear-gradient(90deg, rgba(34,197,94,.95), rgba(45,178,255,.95));
+      background: linear-gradient(90deg, rgba(45,178,255,.95), rgba(168,85,247,.65));
       border-color: transparent;
     }
 
-    .grid{
-      display:grid;
-      grid-template-columns: 1.1fr .9fr;
-      gap: 16px;
-    }
-    @media (max-width: 920px){
-      .grid{grid-template-columns:1fr;}
-    }
     .card{
       border:1px solid var(--line);
-      background: linear-gradient(180deg, var(--glass), var(--glass2));
-      border-radius: var(--radius);
+      background: linear-gradient(180deg, rgba(255,255,255,.10), rgba(255,255,255,.06));
+      border-radius: var(--r);
       box-shadow: var(--shadow);
       backdrop-filter: blur(14px);
-      padding: 16px;
-    }
-
-    /* HERO */
-    .hero{
-      display:flex; gap:14px; align-items:center;
-      padding: 14px;
-      border-radius: 18px;
-      border: 1px solid rgba(255,255,255,.14);
-      background: rgba(0,0,0,.18);
-    }
-    .avatar{
-      width:70px; height:70px; border-radius: 20px;
-      overflow:hidden; flex:0 0 auto;
+      padding: 22px;
       position:relative;
-      border: 1px solid rgba(255,255,255,.18);
-      background: rgba(255,255,255,.06);
+      overflow:hidden;
     }
-    .avatar::after{
+    .card::before{
       content:"";
-      position:absolute; inset:-30px;
-      background: radial-gradient(circle at 30% 30%, rgba(34,197,94,.35), transparent 55%),
-                  radial-gradient(circle at 80% 20%, rgba(45,178,255,.35), transparent 55%),
-                  radial-gradient(circle at 50% 85%, rgba(245,158,11,.22), transparent 55%);
-      filter: blur(10px);
-      opacity: .85;
+      position:absolute; inset:-2px;
+      background:
+        radial-gradient(600px 250px at 50% 0%, rgba(45,178,255,.12), transparent 60%),
+        radial-gradient(550px 260px at 20% 30%, rgba(34,197,94,.10), transparent 65%),
+        radial-gradient(600px 300px at 80% 35%, rgba(168,85,247,.10), transparent 65%);
       pointer-events:none;
-    }
-    .avatar img{
-      width:100%;
-      height:100%;
-      position:relative;
-      z-index:1;
-      object-fit: contain;
-      padding: 10px;
-      background: rgba(0,0,0,.12);
+      filter: blur(10px);
+      opacity:.9;
     }
 
-    .h-title{margin:0; font-size:22px; line-height:1.1}
-    .h-sub{margin:6px 0 0; color:var(--muted); font-size:13px}
-    .badges{display:flex; gap:8px; flex-wrap:wrap; margin-top:10px}
-    .badge{
-      display:inline-flex; gap:8px; align-items:center;
-      padding:8px 10px;
-      border-radius: 999px;
-      border: 1px solid rgba(255,255,255,.14);
+    .hero{
+      position:relative;
+      display:flex;
+      flex-direction:column;
+      align-items:center;
+      text-align:center;
+      gap:10px;
+      padding: 6px 4px 2px;
+    }
+
+    /* Logo client (photo_url) : bankable = centré + grand + sans cadre */
+    .logoWrap{
+      width: 92px;
+      height: 92px;
+      display:flex;
+      align-items:center;
+      justify-content:center;
+    }
+    .logoWrap img{
+      width: 92px;
+      height: 92px;
+      object-fit: contain;
+      display:block;
+      filter: drop-shadow(0 10px 28px rgba(0,0,0,.45));
+    }
+
+    .biz{
+      font-size: 26px;
+      line-height: 1.08;
+      margin: 0;
+      font-weight: 950;
+      letter-spacing: .01em;
+    }
+    .tagline{
+      margin:0;
+      color: var(--muted);
+      font-size: 14px;
+      line-height: 1.35;
+    }
+
+    .trust{
+      margin-top: 10px;
+      display:flex;
+      gap:10px;
+      flex-wrap:wrap;
+      justify-content:center;
+    }
+    .pill{
+      border:1px solid rgba(255,255,255,.14);
       background: rgba(255,255,255,.06);
+      padding: 8px 10px;
+      border-radius: 999px;
       font-size: 12px;
       color: rgba(255,255,255,.82);
+      display:flex;
+      gap:8px;
+      align-items:center;
+      font-weight:800;
     }
 
-    /* ACTIONS */
-    .actions{display:grid; grid-template-columns: 1fr; gap:10px; margin-top:14px;}
+    .cta{
+      position:relative;
+      margin-top: 18px;
+      display:grid;
+      grid-template-columns: 1fr;
+      gap: 10px;
+    }
     .btn{
-      display:flex; align-items:center; justify-content:center;
-      gap:10px;
-      padding:14px 14px;
+      display:flex; align-items:center; justify-content:center; gap:10px;
+      padding: 14px 14px;
       border-radius: 16px;
       border: 1px solid rgba(255,255,255,.14);
       background: rgba(255,255,255,.06);
       color: var(--text);
       text-decoration:none;
-      font-weight: 900;
-      letter-spacing: .01em;
-      cursor:pointer;
-      transition: transform .08s ease;
+      font-weight: 950;
+      letter-spacing:.01em;
       user-select:none;
+      transition: transform .08s ease, filter .12s ease;
     }
     .btn:active{transform: translateY(1px);}
-    .btn.wa{
-      background: linear-gradient(90deg, rgba(34,197,94,.95), rgba(34,197,94,.65));
-      color: #04110a;
-      border-color: transparent;
-    }
-    .btn.pay{
+    .btn.primary{
       background: linear-gradient(90deg, rgba(45,178,255,.95), rgba(168,85,247,.55));
-      color: #061018;
       border-color: transparent;
+      color:#071019;
     }
-    .btn.map{
-      background: linear-gradient(90deg, rgba(245,158,11,.92), rgba(245,158,11,.55));
-      color:#1a1003;
-      border-color: transparent;
+    .btn.wa{
+      background: rgba(34,197,94,.14);
+      border-color: rgba(34,197,94,.35);
+      color: rgba(255,255,255,.92);
     }
-    .btn.disabled{
-      opacity:.55; cursor:not-allowed; transform:none !important;
-      background: rgba(255,255,255,.06) !important;
-      color: rgba(255,255,255,.75) !important;
-      border-color: rgba(255,255,255,.14) !important;
-    }
+    .btn.wa:hover{filter: brightness(1.06);}
+    .btn.primary:hover{filter: brightness(1.06);}
 
-    /* AMOUNTS */
-    .field{margin-top:12px}
-    .label{font-size:12px; color:var(--muted); margin-bottom:6px}
-    input{
-      width:100%;
-      padding:12px 12px;
-      border-radius: 14px;
-      border:1px solid rgba(255,255,255,.16);
-      background: rgba(0,0,0,.22);
-      color: var(--text);
-      outline:none;
+    .smallrow{
+      position:relative;
+      margin-top: 12px;
+      display:flex;
+      justify-content:center;
+      gap:10px;
+      flex-wrap:wrap;
     }
-    .chips{display:flex; gap:10px; flex-wrap:wrap; margin-top:10px}
-    .chip{
-      padding:9px 12px;
-      border-radius: 999px;
-      border: 1px solid rgba(255,255,255,.14);
-      background: rgba(255,255,255,.07);
-      cursor:pointer;
-      font-weight: 900;
-      font-size: 13px;
-    }
-    .hint{margin-top:10px; color:var(--muted); font-size:12.5px; line-height:1.35}
-
-    /* SHARE */
-    .shareRow{display:flex; gap:10px; flex-wrap:wrap; margin-top:12px}
     .mini{
       padding:10px 12px;
       border-radius: 14px;
       border:1px solid rgba(255,255,255,.14);
-      background: rgba(255,255,255,.06);
+      background: rgba(0,0,0,.18);
       color: rgba(255,255,255,.88);
       cursor:pointer;
-      font-weight: 800;
+      font-weight: 900;
       font-size: 12.5px;
+      backdrop-filter: blur(10px);
     }
+    .mini:hover{filter: brightness(1.06);}
+
+    .note{
+      position:relative;
+      margin-top: 14px;
+      color: var(--muted);
+      font-size: 12.5px;
+      line-height: 1.35;
+      text-align:center;
+    }
+
+    .footer{
+      margin-top: 14px;
+      display:flex;
+      justify-content:center;
+      gap:12px;
+      flex-wrap:wrap;
+      color: rgba(255,255,255,.62);
+      font-size: 12px;
+      position:relative;
+    }
+    .footer a{color: rgba(255,255,255,.70); text-decoration:none}
+    .footer a:hover{text-decoration:underline}
 
     /* QR modal */
     .modal{
@@ -259,153 +261,112 @@
       border:1px solid rgba(255,255,255,.14);
       background: rgba(255,255,255,.06);
       color: var(--text);
-      font-weight: 900;
+      font-weight: 950;
       cursor:pointer;
     }
 
-    .footerLinks{margin-top:14px; display:flex; gap:12px; flex-wrap:wrap;}
-    .footerLinks a{color:rgba(255,255,255,.78); text-decoration:none; font-size:12.5px}
-    .footerLinks a:hover{text-decoration:underline}
+    @media (max-width:520px){
+      .card{padding:18px}
+      .biz{font-size:24px}
+      .logoWrap, .logoWrap img{width:84px; height:84px}
+    }
   </style>
 </head>
 
 <body>
-
-  {# -------------------------------------------------------------------
-     SQLAlchemy object safe mapping (NO .get())
-     Model fields: payment_link, photo_url, maps_url, headline, whatsapp, currency, amounts, slug, business_name
-     ------------------------------------------------------------------- #}
-
+  {# SQLAlchemy-safe fields #}
   {% set pay_link = merchant.payment_link or '' %}
-  {% set photo = merchant.photo_url or '' %}
-  {% set maps = merchant.maps_url or '' %}
+  {% set logo = merchant.photo_url or '' %}
   {% set wa_raw = merchant.whatsapp or '' %}
   {% set wa = (wa_raw|string)|replace('+','') %}
-
-  {# amounts is stored as "25,49,79" (string) #}
-  {% set _amounts_raw = merchant.amounts or '' %}
-  {% set _amounts_list = _amounts_raw.split(',') if _amounts_raw else [] %}
-  {% set a1 = (_amounts_list[0] if _amounts_list|length > 0 and _amounts_list[0] else '25') %}
-  {% set a2 = (_amounts_list[1] if _amounts_list|length > 1 and _amounts_list[1] else '49') %}
-  {% set a3 = (_amounts_list[2] if _amounts_list|length > 2 and _amounts_list[2] else '79') %}
+  {% set headline = merchant.headline or '' %}
+  {% set maps = merchant.maps_url or '' %}
 
   <div class="wrap">
-    <div class="topbar">
-      <div class="brand">
-        <div class="dot"></div>
-        <div>
-          <b>MAAVNICA</b>
-          <span>PayLink</span>
-        </div>
-      </div>
-
+    <div class="top">
+      <div style="width:1px;height:1px"></div>
       <div class="lang" aria-label="Language toggle">
         <button id="btnES" type="button" class="active">ES</button>
         <button id="btnFR" type="button">FR</button>
       </div>
     </div>
 
-    <div class="grid">
-      <!-- LEFT: identity + actions -->
-      <div class="card">
-        <div class="hero">
-          <div class="avatar">
-            {% if photo %}
-              <img src="{{ photo }}" alt="Foto" />
-            {% else %}
-              <img src="https://images.unsplash.com/photo-1520975682031-a07f84c73372?auto=format&fit=crop&w=300&q=70" alt="Foto" />
-            {% endif %}
-          </div>
-          <div style="flex:1">
-            <h2 class="h-title">{{ merchant.business_name or "Tu negocio" }}</h2>
-            <div class="h-sub" id="headline">
-              {{ merchant.headline or "" }}
-            </div>
-
-            <div class="badges">
-              <div class="badge" data-i18n="secure">🔒 Pago seguro</div>
-              <div class="badge" data-i18n="receipt">🧾 Recibo automático</div>
-              <div class="badge" data-i18n="fast">⚡ Confirmación rápida</div>
-            </div>
-          </div>
+    <div class="card">
+      <div class="hero">
+        <div class="logoWrap" aria-label="Business logo">
+          {% if logo %}
+            <img src="{{ logo }}" alt="Logo" />
+          {% else %}
+            <img src="/static/images/maavnica.png" alt="Logo" />
+          {% endif %}
         </div>
 
-        <div class="actions">
+        <h1 class="biz">{{ merchant.business_name or "Tu negocio" }}</h1>
+
+        <p class="tagline" id="tagline">
+          {% if headline %}
+            {{ headline }}
+          {% else %}
+            <span data-i18n="default_tagline">Pago simple y seguro en segundos.</span>
+          {% endif %}
+        </p>
+
+        <div class="trust">
+          <div class="pill" data-i18n="pill_secure">🔒 Seguro</div>
+          <div class="pill" data-i18n="pill_instant">⚡ Instantáneo</div>
+          <div class="pill" data-i18n="pill_receipt">🧾 Recibo</div>
+        </div>
+      </div>
+
+      <div class="cta">
+        {% if pay_link %}
+          <a class="btn primary" href="{{ pay_link }}" target="_blank" rel="noopener">
+            💳 <span data-i18n="pay_now">Pagar ahora</span>
+          </a>
           <a id="waBtn" class="btn wa"
              href="{% if wa %}https://wa.me/{{ wa }}{% else %}#{% endif %}"
              {% if not wa %}onclick="return false"{% endif %}
              target="_blank" rel="noopener">
             💬 <span data-i18n="whatsapp">Hablar por WhatsApp</span>
           </a>
-
-          {% if pay_link %}
-          <a id="payBtn" class="btn pay" href="{{ pay_link }}" target="_blank" rel="noopener">
-            💳 <span data-i18n="pay">Pagar ahora</span>
-          </a>
-          {% else %}
-          <div class="btn pay disabled">
-            💳 <span data-i18n="pay_disabled">Pago no disponible</span>
-          </div>
-          {% endif %}
-
-          {% if maps %}
-          <a class="btn map" href="{{ maps }}" target="_blank" rel="noopener">
-            📍 <span data-i18n="maps">Ver ubicación</span>
-          </a>
-          {% endif %}
-        </div>
-
-        {% if not pay_link %}
-        <div class="hint" style="margin-top:10px" data-i18n="missing_link">
-          Este PayLink todavía no está listo para cobrar. Falta agregar el enlace Stripe.
-        </div>
         {% else %}
-        <div class="hint" style="margin-top:10px" data-i18n="stripe_note">
-          Pagos procesados por Stripe. Maavnica no retiene tu dinero.
-        </div>
+          {# Si pas de paiement, WhatsApp devient l’action principale #}
+          <a id="waBtn" class="btn primary"
+             href="{% if wa %}https://wa.me/{{ wa }}{% else %}#{% endif %}"
+             {% if not wa %}onclick="return false"{% endif %}
+             target="_blank" rel="noopener">
+            💬 <span data-i18n="whatsapp">Hablar por WhatsApp</span>
+          </a>
+          <div class="btn wa" style="opacity:.65; cursor:not-allowed" aria-disabled="true">
+            💳 <span data-i18n="pay_unavailable">Pago no disponible</span>
+          </div>
         {% endif %}
-
-        <div class="shareRow">
-          <button class="mini" id="shareBtn" type="button">📣 <span data-i18n="share">Compartir</span></button>
-          <button class="mini" id="copyBtn" type="button">🔗 <span data-i18n="copy">Copiar enlace</span></button>
-          <button class="mini" id="qrBtn" type="button">📱 <span data-i18n="qr">Mostrar QR</span></button>
-        </div>
-
-        <div class="footerLinks">
-          <a href="/mentions-legales" target="_blank">Mentions legales</a>
-          <a href="/cgv-paylink" target="_blank">CGV</a>
-          <a href="/contact" target="_blank" data-i18n="contact">Contacto</a>
-        </div>
       </div>
 
-      <!-- RIGHT: amount selector -->
-      <div class="card">
-        <h3 style="margin:0 0 6px; font-size:18px" data-i18n="choose_amount">Elegí tu monto</h3>
+      <div class="smallrow">
+        <button class="mini" id="copyBtn" type="button">🔗 <span data-i18n="copy">Copiar enlace</span></button>
+        <button class="mini" id="qrBtn" type="button">📱 <span data-i18n="qr">Mostrar QR</span></button>
+        {% if maps %}
+          <a class="mini" href="{{ maps }}" target="_blank" rel="noopener" style="text-decoration:none; display:inline-flex; align-items:center; gap:8px;">
+            📍 <span data-i18n="maps">Ubicación</span>
+          </a>
+        {% endif %}
+      </div>
 
-        <div class="field">
-          <div class="label" data-i18n="amount_label">Monto</div>
-          <input id="amount" type="number" min="1" value="{{ a1 }}">
-        </div>
+      <div class="note" id="note">
+        {% if pay_link %}
+          <span data-i18n="stripe_note">Pagos procesados por Stripe. Maavnica no retiene tu dinero.</span>
+        {% else %}
+          <span data-i18n="missing_link">Este PayLink todavía no está listo para cobrar.</span>
+        {% endif %}
+      </div>
 
-        <div class="chips">
-          <div class="chip" data-v="{{ a1 }}">{{ a1 }}</div>
-          <div class="chip" data-v="{{ a2 }}">{{ a2 }}</div>
-          <div class="chip" data-v="{{ a3 }}">{{ a3 }}</div>
-          <div class="chip" data-v="" data-i18n="other">Otro</div>
-        </div>
-
-        <div class="hint" data-i18n="amount_hint">
-          Consejo: si el enlace Stripe es “monto libre”, el cliente confirma el monto en Stripe.
-        </div>
-
-        <div style="margin-top:14px; border-top:1px solid rgba(255,255,255,.12); padding-top:14px;">
-          <div class="hint" data-i18n="use_case">
-            Ideal para cobrar por WhatsApp, Facebook o SMS en segundos.
-          </div>
-          <div class="hint" style="margin-top:8px; opacity:.9;">
-            <span style="opacity:.85;">Moneda:</span> <b>{{ merchant.currency or "USD" }}</b>
-          </div>
-        </div>
+      <div class="footer">
+        <span><span data-i18n="powered">Powered by</span> <b>Maavnica</b></span>
+        <span>·</span>
+        <a href="/mentions-legales" target="_blank">Mentions légales</a>
+        <a href="/cgv-paylink" target="_blank">CGV</a>
+        <a href="/contact" target="_blank" data-i18n="contact">Contacto</a>
       </div>
     </div>
   </div>
@@ -417,56 +378,50 @@
       <div class="qrWrap">
         <img id="qrImg" src="/qr/{{ merchant.slug }}.png" alt="QR" style="width:220px;height:220px;border-radius:12px;" />
       </div>
-      <div class="hint" data-i18n="qr_hint">Podés imprimirlo y pegarlo en tu local.</div>
+      <div style="color:rgba(255,255,255,.7); font-size:12.5px" data-i18n="qr_hint">
+        Podés imprimirlo y pegarlo en tu local.
+      </div>
       <button class="close" id="qrClose" type="button" data-i18n="close">Cerrar</button>
     </div>
   </div>
 
   <script>
-    // ---------- i18n ----------
+    // i18n
     const I18N = {
       es: {
-        secure: "🔒 Pago seguro",
-        receipt: "🧾 Recibo automático",
-        fast: "⚡ Confirmación rápida",
+        default_tagline: "Pago simple y seguro en segundos.",
+        pill_secure: "🔒 Seguro",
+        pill_instant: "⚡ Instantáneo",
+        pill_receipt: "🧾 Recibo",
+        pay_now: "Pagar ahora",
         whatsapp: "Hablar por WhatsApp",
-        pay: "Pagar ahora",
-        pay_disabled: "Pago no disponible",
-        maps: "Ver ubicación",
-        missing_link: "Este PayLink todavía no está listo para cobrar. Falta agregar el enlace Stripe.",
-        stripe_note: "Pagos procesados por Stripe. Maavnica no retiene tu dinero.",
-        share: "Compartir",
+        pay_unavailable: "Pago no disponible",
         copy: "Copiar enlace",
         qr: "Mostrar QR",
+        maps: "Ubicación",
+        stripe_note: "Pagos procesados por Stripe. Maavnica no retiene tu dinero.",
+        missing_link: "Este PayLink todavía no está listo para cobrar.",
+        powered: "Powered by",
         contact: "Contacto",
-        choose_amount: "Elegí tu monto",
-        amount_label: "Monto",
-        other: "Otro",
-        amount_hint: "Consejo: si el enlace Stripe es “monto libre”, el cliente confirma el monto en Stripe.",
-        use_case: "Ideal para cobrar por WhatsApp, Facebook o SMS en segundos.",
         qr_title: "Escaneá para abrir el PayLink",
         qr_hint: "Podés imprimirlo y pegarlo en tu local.",
         close: "Cerrar"
       },
       fr: {
-        secure: "🔒 Paiement sécurisé",
-        receipt: "🧾 Reçu automatique",
-        fast: "⚡ Confirmation rapide",
+        default_tagline: "Paiement simple et sécurisé en quelques secondes.",
+        pill_secure: "🔒 Sécurisé",
+        pill_instant: "⚡ Instantané",
+        pill_receipt: "🧾 Reçu",
+        pay_now: "Payer maintenant",
         whatsapp: "Contacter sur WhatsApp",
-        pay: "Payer maintenant",
-        pay_disabled: "Paiement indisponible",
-        maps: "Voir l’emplacement",
-        missing_link: "Ce PayLink n’est pas encore prêt. Il manque le lien Stripe.",
-        stripe_note: "Paiements traités par Stripe. Maavnica ne retient pas votre argent.",
-        share: "Partager",
+        pay_unavailable: "Paiement indisponible",
         copy: "Copier le lien",
         qr: "Afficher le QR",
+        maps: "Localisation",
+        stripe_note: "Paiements traités par Stripe. Maavnica ne retient pas votre argent.",
+        missing_link: "Ce PayLink n’est pas encore prêt à encaisser.",
+        powered: "Powered by",
         contact: "Contact",
-        choose_amount: "Choisissez un montant",
-        amount_label: "Montant",
-        other: "Autre",
-        amount_hint: "Astuce : si le lien Stripe est en “montant libre”, le client confirme le montant sur Stripe.",
-        use_case: "Idéal pour encaisser via WhatsApp, Facebook ou SMS en quelques secondes.",
         qr_title: "Scannez pour ouvrir le PayLink",
         qr_hint: "Vous pouvez l’imprimer et l’afficher dans votre boutique.",
         close: "Fermer"
@@ -482,77 +437,30 @@
       document.getElementById("btnES").classList.toggle("active", lang === "es");
       document.getElementById("btnFR").classList.toggle("active", lang === "fr");
       localStorage.setItem("paylink_lang", lang);
-      updateWhatsAppPrefill();
     }
-
     const savedLang = localStorage.getItem("paylink_lang") || "es";
     applyLang(savedLang);
     document.getElementById("btnES").addEventListener("click", () => applyLang("es"));
     document.getElementById("btnFR").addEventListener("click", () => applyLang("fr"));
 
-    // ---------- Amount chips (UX only; Stripe amount can't be injected into standard Payment Link) ----------
-    const amountEl = document.getElementById("amount");
-    document.querySelectorAll(".chip").forEach(ch => {
-      ch.addEventListener("click", () => {
-        const v = ch.dataset.v;
-        if (v === "") amountEl.focus();
-        else amountEl.value = v;
-        updateWhatsAppPrefill();
-      });
-    });
-    amountEl.addEventListener("input", updateWhatsAppPrefill);
-
-    // ---------- WhatsApp prefill ----------
-    const waBtn = document.getElementById("waBtn");
-    function updateWhatsAppPrefill(){
-      if (!waBtn) return;
-      const base = waBtn.getAttribute("href");
-      if (!base || base === "#") return;
-
-      const amt = (Number(amountEl.value) || "").toString();
-      const cur = "{{ merchant.currency or 'USD' }}";
-
-      const defES = `Hola, quiero información${amt ? " y pagar " + amt + " " + cur : ""}.`;
-      const defFR = `Bonjour, je veux une info${amt ? " et payer " + amt + " " + cur : ""}.`;
-
-      const lang = localStorage.getItem("paylink_lang") || "es";
-      const msg = (lang === "fr" ? defFR : defES);
-
-      const url = base.split("?")[0] + "?text=" + encodeURIComponent(msg);
-      waBtn.setAttribute("href", url);
-    }
-    updateWhatsAppPrefill();
-
-    // ---------- Share / copy ----------
-    const shareBtn = document.getElementById("shareBtn");
+    // Copy
     const copyBtn = document.getElementById("copyBtn");
     const pageUrl = window.location.href;
-
-    shareBtn?.addEventListener("click", async () => {
-      try{
-        if (navigator.share){
-          await navigator.share({ title: document.title, url: pageUrl });
-        } else {
-          await navigator.clipboard.writeText(pageUrl);
-          copyBtn.textContent = "✅ OK";
-          setTimeout(()=> copyBtn.textContent="🔗 " + (localStorage.getItem("paylink_lang")==="fr" ? "Copier le lien" : "Copiar enlace"), 900);
-        }
-      } catch(e){}
-    });
-
     copyBtn?.addEventListener("click", async () => {
       try{
         await navigator.clipboard.writeText(pageUrl);
-        copyBtn.textContent = "✅ OK";
-        setTimeout(()=> copyBtn.textContent="🔗 " + (localStorage.getItem("paylink_lang")==="fr" ? "Copier le lien" : "Copiar enlace"), 900);
-      } catch(e){}
+        copyBtn.innerHTML = "✅ OK";
+        setTimeout(()=>{
+          const lang = localStorage.getItem("paylink_lang") || "es";
+          copyBtn.innerHTML = "🔗 <span>" + (lang === "fr" ? "Copier le lien" : "Copiar enlace") + "</span>";
+        }, 900);
+      }catch(e){}
     });
 
-    // ---------- QR modal ----------
+    // QR modal
     const qrBtn = document.getElementById("qrBtn");
     const qrModal = document.getElementById("qrModal");
     const qrClose = document.getElementById("qrClose");
-
     qrBtn?.addEventListener("click", () => {
       const img = document.getElementById("qrImg");
       if (img) img.src = `/qr/{{ merchant.slug }}.png?ts=${Date.now()}`;
@@ -563,6 +471,7 @@
   </script>
 </body>
 </html>
+
 
 
 
