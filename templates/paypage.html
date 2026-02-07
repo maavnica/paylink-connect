@@ -34,7 +34,7 @@
       padding: 26px 16px 34px;
     }
 
-    /* ⬇️ plus “dense premium” sur desktop */
+    /* Desktop: densité premium */
     .wrap{width:min(720px,100%); margin:0 auto;}
 
     .top{
@@ -98,9 +98,9 @@
       padding: 6px 4px 2px;
     }
 
-    /* Logo/Photo client : bankable = centré + grand
-       - Si photo (jpg/jpeg/webp) => rond + cover
-       - Si logo (png/svg/...) => badge “assumé” (évite l’effet carré blanc)
+    /* Logo/Photo client :
+       - photo (jpg/jpeg/webp) => rond + cover
+       - logo => badge premium (évite l’effet carré blanc)
     */
     .logoWrap{
       width: 96px;
@@ -123,24 +123,26 @@
       overflow: hidden;
       background: rgba(255,255,255,.06);
       border: 1px solid rgba(255,255,255,.12);
+      box-shadow: inset 0 1px 0 rgba(255,255,255,.10);
     }
     .logoWrap.round img{
       object-fit: cover;
       filter: none;
     }
 
-    /* logo => badge premium (même si fond blanc dans le png) */
+    /* logo => badge premium */
     .logoWrap.badge{
       padding: 10px;
       border-radius: 18px;
       background: rgba(0,0,0,.18);
       border: 1px solid rgba(255,255,255,.12);
+      box-shadow: inset 0 1px 0 rgba(255,255,255,.10);
       width: auto;
       height: auto;
     }
     .logoWrap.badge img{
-      width: 76px;
-      height: 76px;
+      width: 82px;
+      height: 82px;
       object-fit: contain;
       filter: drop-shadow(0 8px 22px rgba(0,0,0,.35));
     }
@@ -204,6 +206,8 @@
       background: linear-gradient(90deg, rgba(45,178,255,.95), rgba(168,85,247,.55));
       border-color: transparent;
       color:#071019;
+      min-height: 52px;
+      font-size: 15px;
     }
     .btn.wa{
       background: rgba(34,197,94,.14);
@@ -396,7 +400,7 @@
 
       <div class="note" id="note">
         {% if pay_link %}
-          <span data-i18n="stripe_note">Pagos procesados por Stripe. Maavnica no retiene tu dinero.</span>
+          <span data-i18n="stripe_note">Pagos seguros con Stripe. Confirmación inmediata.</span>
         {% else %}
           <span data-i18n="missing_link">Este PayLink todavía no está listo para cobrar.</span>
         {% endif %}
@@ -440,7 +444,7 @@
         copy: "Copiar enlace",
         qr: "Mostrar QR",
         maps: "Ubicación",
-        stripe_note: "Pagos procesados por Stripe. Maavnica no retiene tu dinero.",
+        stripe_note: "Pagos seguros con Stripe. Confirmación inmediata.",
         missing_link: "Este PayLink todavía no está listo para cobrar.",
         powered: "Powered by",
         contact: "Contacto",
@@ -460,7 +464,7 @@
         copy: "Copier le lien",
         qr: "Afficher le QR",
         maps: "Localisation",
-        stripe_note: "Paiements traités par Stripe. Maavnica ne retient pas votre argent.",
+        stripe_note: "Paiement sécurisé via Stripe. Confirmation immédiate.",
         missing_link: "Ce PayLink n’est pas encore prêt à encaisser.",
         powered: "Powered by",
         contact: "Contact",
