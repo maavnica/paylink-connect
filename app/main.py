@@ -22,11 +22,13 @@ import qrcode
 
 DATABASE_URL = os.getenv("DATABASE_URL", "").strip()
 ADMIN_KEY = os.getenv("ADMIN_KEY", "").strip()
-BASE_URL_ENV = os.getenv("BASE_URL", "").strip()  # optionnel
+BASE_URL_ENV = os.getenv("BASE_URL", "").strip()  # optionnel (ex: https://paylink.maavnica.com)
 SQLITE_DIR = os.getenv("SQLITE_DIR", "/tmp").strip() or "/tmp"  # Render-safe
 
 # Paths (robuste sur Render / en local)
-PROJECT_ROOT = Path(__file__).resolve().parents[1]  # .../paylink_connect
+# NOTE: __file__ = .../paylink_connect/app/main.py (souvent)
+# parents[1] => .../paylink_connect (racine projet) si main.py est dans /app
+PROJECT_ROOT = Path(__file__).resolve().parents[1]
 TEMPLATES_DIR = PROJECT_ROOT / "templates"
 STATIC_DIR = PROJECT_ROOT / "static"
 
@@ -65,6 +67,9 @@ class Merchant(Base):
     maps_url = Column(String, nullable=True)
     headline = Column(String, nullable=True)
 
+    # ✅ utilisé par connect.html / bouton "Tester WhatsApp"
+    whatsapp_message = Column(String, nullable=True)
+
     created_at = Column(DateTime, default=datetime.utcnow)
 
 
@@ -77,6 +82,11 @@ templates = Jinja2Templates(directory=str(TEMPLATES_DIR))
 
 @app.on_event("startup")
 def startup():
+    """
+    ⚠️ create_all ne modifie pas un schéma existant (ex: ajout de colonne).
+    - En SQLite : supprimer /tmp/paylink.db si tu veux recréer.
+    - En Postgres : faire ALTER TABLE pour ajouter whatsapp_message.
+    """
     print("🧱 Initialisation DB (create_all)")
     Base.metadata.create_all(bind=engine)
 
@@ -90,9 +100,15 @@ def get_db():
     return SessionLocal()
 
 
-def require_admin(request: Request):
-    key = request.query_params.get("key", "")
-    if not ADMIN_KEY or key != ADMIN_KEY:
+def require_admin(request: Request) -> None:
+    """
+    Accès admin via ?key=...
+    - Refuse si ADMIN_KEY n'est pas défini (sécurité)
+    """
+    if not ADMIN_KEY:
+        raise HTTPException(status_code=500, detail="ADMIN_KEY is not set")
+    key = (request.query_params.get("key") or "").strip()
+    if key != ADMIN_KEY:
         raise HTTPException(status_code=403, detail="Forbidden")
 
 
@@ -123,6 +139,16 @@ def parse_amounts(amounts: str) -> str:
     parts = re.split(r"[,| ]+", cleaned.strip())
     parts = [p for p in parts if p.isdigit()]
     return ",".join(parts[:6])
+
+
+def get_base_url(request: Request) -> str:
+    """
+    Construit l'URL publique (utile pour QR) :
+    - BASE_URL env si fourni
+    - sinon request.base_url
+    """
+    base = BASE_URL_ENV.rstrip("/") if BASE_URL_ENV else str(request.base_url).rstrip("/")
+    return base
 
 
 # =========================================================
@@ -225,6 +251,8 @@ def connect_save(
     photo_url: Optional[str] = Form(None),
     maps_url: Optional[str] = Form(None),
     headline: Optional[str] = Form(None),
+    whatsapp: Optional[str] = Form(None),
+    whatsapp_message: Optional[str] = Form(None),
 ):
     require_admin(request)
     session = get_db()
@@ -238,6 +266,14 @@ def connect_save(
         merchant.maps_url = (maps_url or "").strip() or None
         merchant.headline = (headline or "").strip() or None
 
+        # ✅ WhatsApp + message
+        if whatsapp is not None:
+            w = whatsapp.strip()
+            if w:
+                merchant.whatsapp = w
+
+        merchant.whatsapp_message = (whatsapp_message or "").strip() or None
+
         session.commit()
         return RedirectResponse(f"/connect/{merchant_id}?key={ADMIN_KEY}", status_code=302)
     finally:
@@ -247,15 +283,10 @@ def connect_save(
 # ---------- QR INTERNE ----------
 @app.get("/qr/{slug}.png")
 def qr_png(request: Request, slug: str):
-    base_url = BASE_URL_ENV.rstrip("/") if BASE_URL_ENV else str(request.base_url).rstrip("/")
+    base_url = get_base_url(request)
     url = f"{base_url}/p/{slug}"
 
     img = qrcode.make(url)
     buf = io.BytesIO()
     img.save(buf, format="PNG")
     return Response(content=buf.getvalue(), media_type="image/png")
-
-
-
-
-
