@@ -3,13 +3,13 @@
 <head>
   <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1" />
-  <title>Maavnica PayLink — Cobrá por WhatsApp. Cobrás en tu Stripe.</title>
+  <title>Maavnica PayLink — Cobrá por WhatsApp en segundos</title>
 
-  <meta name="description" content="Cobrá por WhatsApp cuando el cliente no tiene efectivo. Activá tu PayLink (página lista + suscripción) y recibí pagos directamente en tu cuenta Stripe con Stripe Connect." />
+  <meta name="description" content="Creá una página de pago simple y reutilizable para cobrar por WhatsApp, SMS o email. Compartís el link y listo." />
   <meta name="theme-color" content="#0b1220" />
 
   <meta property="og:title" content="Maavnica PayLink" />
-  <meta property="og:description" content="Un link de pago simple, seguro y reutilizable para cobrar por WhatsApp. Cobrás directamente en tu Stripe (Connect)." />
+  <meta property="og:description" content="Un link de pago simple y reutilizable para cobrar por WhatsApp. Compartís el link y listo." />
   <meta property="og:type" content="website" />
 
   <style>
@@ -23,7 +23,6 @@
       --accent:#22c55e;
       --accent2:#16a34a;
       --blue:#3b82f6;
-      --blue2:#2563eb;
       --shadow:0 18px 55px rgba(0,0,0,.45);
       --radius:20px;
       --max:1040px;
@@ -70,9 +69,9 @@
       display:block;
       letter-spacing:normal;
       text-transform:none;
-      font-weight:600;
+      font-weight:650;
       color:var(--muted);
-      font-size:.8rem;
+      font-size:.82rem;
     }
 
     .panel{
@@ -129,27 +128,6 @@
       white-space:nowrap;
     }
 
-    .compat{
-      margin-top:12px;
-      display:flex;
-      flex-wrap:wrap;
-      gap:10px;
-      align-items:center;
-    }
-    .compat .pill{
-      display:inline-flex;
-      align-items:center;
-      gap:8px;
-      padding:8px 12px;
-      border-radius:999px;
-      border:1px solid rgba(255,255,255,.14);
-      background:rgba(0,0,0,.18);
-      color:rgba(255,255,255,.82);
-      font-weight:900;
-      font-size:.9rem;
-      white-space:nowrap;
-    }
-
     .row{display:flex;gap:12px;flex-wrap:wrap;align-items:center;margin-top:10px}
     .cta{
       display:inline-flex;
@@ -163,7 +141,7 @@
       font-weight:900;
       text-decoration:none;
       box-shadow:0 18px 45px rgba(34,197,94,.25);
-      min-width: 220px;
+      min-width: 240px;
     }
     .ghost{
       display:inline-flex;
@@ -177,22 +155,12 @@
       color:var(--text);
       font-weight:900;
       text-decoration:none;
-      min-width: 220px;
+      min-width: 240px;
     }
     .ghost:hover{border-color:rgba(59,130,246,.35); box-shadow:0 0 0 3px rgba(59,130,246,.12);}
 
-    .price{
-      margin-top:16px;
-      font-size:1.85rem;
-      font-weight:900;
-    }
-    .price span{
-      font-size:.95rem;
-      color:var(--muted);
-      font-weight:700;
-    }
-    .subnote{
-      margin-top:8px;
+    .trust{
+      margin-top:14px;
       color:rgba(255,255,255,.78);
       font-size:.95rem;
       border:1px solid rgba(59,130,246,.20);
@@ -200,6 +168,7 @@
       padding:12px 14px;
       border-radius:14px;
     }
+    .trust b{color:rgba(255,255,255,.92)}
 
     .grid{
       margin-top:18px;
@@ -289,7 +258,7 @@
         <div class="logo"></div>
         <div class="brandname">
           MAAVNICA
-          <small>PayLink (Stripe Connect)</small>
+          <small>PayLink — link de pago para WhatsApp</small>
         </div>
       </a>
     </header>
@@ -298,74 +267,63 @@
       <h1>Cobrá por WhatsApp cuando el cliente no tiene efectivo</h1>
 
       <p class="lead">
-        PayLink es una <b>página de pago simple, segura y reutilizable</b> para profesionales que trabajan por WhatsApp.
-        <br/>También funciona perfecto por <b>SMS</b> o <b>email</b> (mandás el link y listo).
-        <br/>Lo más importante: <b>cobrás directamente en tu propia cuenta Stripe</b> gracias a <b>Stripe Connect</b>.
+        PayLink te crea una <b>página de pago simple, segura y reutilizable</b>.
+        <br/>La compartís por <b>WhatsApp</b>, <b>SMS</b> o <b>email</b> y listo: el cliente paga.
       </p>
 
       <div class="miniFlow">
-        <div class="flowItem">💬 WhatsApp</div>
-        <div class="flowItem">🔗 Link</div>
-        <div class="flowItem">💳 Pago</div>
-        <div class="flowItem">⚡ Comprobante</div>
+        <div class="flowItem">💬 Compartís por WhatsApp</div>
+        <div class="flowItem">🔗 El cliente abre el link</div>
+        <div class="flowItem">💳 Paga en segundos</div>
+        <div class="flowItem">✅ Confirmación</div>
       </div>
 
       <div class="bullets">
-        <div class="chip">💳 Tarjeta bancaria</div>
-        <div class="chip">📲 Apple Pay / Google Pay</div>
-        <div class="chip">🌍 Tarjetas locales e internacionales</div>
-        <div class="chip">🔐 Pago seguro (Stripe)</div>
-        <div class="chip">✅ Cobro directo en tu Stripe</div>
-      </div>
-
-      <div class="compat">
-        <div class="pill">📱 Compatible iPhone</div>
-        <div class="pill">🤖 Compatible Android</div>
-        <div class="pill">🚫 Sin efectivo · sin transferencias</div>
+        <div class="chip">🔗 Link reutilizable</div>
+        <div class="chip">⚡ Ideal para servicios</div>
+        <div class="chip">📱 Perfecto en móvil</div>
+        <div class="chip">🔐 Pago seguro</div>
       </div>
 
       <div class="row" style="margin-top:14px;">
-        <a class="cta" href="/demo/carlos">🔥 Probar demo Carlos</a>
-        <a class="ghost" href="/start">Activar mi PayLink</a>
+        <a class="cta" href="/start">✨ Crear mi PayLink</a>
+        <a class="ghost" href="/p/demo-carlos">👀 Ver ejemplo</a>
       </div>
 
-      <div class="price">
-        19 USD/mes <span>· precio de lanzamiento · suscripción</span>
-      </div>
-      <div class="subnote">
-        <b>Importante:</b> Con Stripe Connect, el dinero de tus clientes <b>va a tu Stripe</b>.
-        Maavnica factura <b>la suscripción</b> del servicio (no retiene tus cobros).
+      <div class="trust">
+        <b>Transparente:</b> los pagos se procesan con <b>Stripe</b>.
+        <b>Maavnica no retiene tu dinero.</b>
       </div>
 
       <div class="grid">
         <div class="box">
           <div class="k">💰 Señas / anticipos</div>
           <b>Cobrá una seña en segundos</b><br/>
-          Ideal para reservas, diagnósticos, trabajos a domicilio o pedidos.
+          Ideal para reservas, diagnósticos o pedidos.
         </div>
         <div class="box">
           <div class="k">⚡ Urgencias</div>
           <b>Cobro express sin efectivo</b><br/>
-          El cliente paga con tarjeta y vos empezás el trabajo de inmediato.
+          El cliente paga y vos empezás el trabajo de inmediato.
         </div>
         <div class="box">
           <div class="k">📍 Cobro a distancia</div>
           <b>Cliente lejos, pago igual</b><br/>
-          Mandás el link por WhatsApp, SMS o email y cobrás sin moverte.
+          Mandás el link y cobrás sin moverte.
         </div>
         <div class="box">
           <div class="k">🧾 Más profesional</div>
-          <b>Con comprobante automático</b><br/>
-          Pagos claros, registro simple, menos discusiones.
+          <b>Todo más claro</b><br/>
+          Menos discusiones, más confianza.
         </div>
       </div>
 
       <div class="section">
         <h2>¿Cómo funciona?</h2>
         <div class="steps">
-          <div class="step"><b>1)</b> Rellenás el formulario (tu negocio, tu WhatsApp y tus montos).</div>
-          <div class="step"><b>2)</b> Conectás tu cuenta Stripe (Stripe Connect). <b>Vos sos el que cobra</b>.</div>
-          <div class="step"><b>3)</b> Recibís tu página PayLink con botón de pago + botón WhatsApp (y link reutilizable para SMS/email).</div>
+          <div class="step"><b>1)</b> Creás tu PayLink (tu negocio + WhatsApp).</div>
+          <div class="step"><b>2)</b> Pegás tu link de pago (si ya lo tenés) y una foto/logo.</div>
+          <div class="step"><b>3)</b> Compartís el link por WhatsApp, SMS o email.</div>
         </div>
       </div>
 
@@ -374,19 +332,19 @@
         <div class="faq">
           <details>
             <summary>¿Necesito una página web?</summary>
-            <p>No. PayLink te crea una página lista para cobrar. Solo compartís el link por WhatsApp, SMS o email.</p>
+            <p>No. PayLink te crea una página lista para cobrar. Solo compartís el link.</p>
           </details>
           <details>
             <summary>¿Cuándo recibo el dinero?</summary>
-            <p>El dinero se cobra en tu propia cuenta Stripe. El tiempo de acreditación depende de Stripe y tu banco.</p>
+            <p>Depende del procesador de pagos y tu banco. PayLink no retiene fondos.</p>
           </details>
           <details>
             <summary>¿PayLink se queda con mi dinero?</summary>
-            <p>No. Con Stripe Connect activado, el cobro va directo a tu Stripe. Maavnica es el proveedor técnico.</p>
+            <p>No. Maavnica es el proveedor técnico de la página. El pago se procesa por Stripe.</p>
           </details>
           <details>
-            <summary>¿Puedo cobrar diferentes montos?</summary>
-            <p>Sí. Tenés montos rápidos y también podés ingresar otro monto en segundos en tu página PayLink.</p>
+            <summary>¿Puedo cambiar mi logo, WhatsApp o links?</summary>
+            <p>Sí. Lo editás desde tu panel admin (Connect) y queda actualizado al instante.</p>
           </details>
         </div>
       </div>
@@ -406,5 +364,6 @@
   </div>
 </body>
 </html>
+
 
 
