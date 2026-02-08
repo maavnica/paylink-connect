@@ -4,99 +4,423 @@
   <meta charset="utf-8"/>
   <meta name="viewport" content="width=device-width,initial-scale=1"/>
   <title>PayLink Connect — Admin</title>
+
   <style>
-    body{font-family:system-ui,-apple-system,Segoe UI,Roboto,Arial;margin:0;background:#0b1020;color:#e8ecff}
-    .wrap{max-width:980px;margin:0 auto;padding:24px}
-    .card{background:rgba(255,255,255,.06);border:1px solid rgba(255,255,255,.12);border-radius:18px;padding:18px}
-    .grid{display:grid;grid-template-columns:1fr 1fr;gap:14px}
-    label{display:block;font-size:12px;opacity:.85;margin:10px 0 6px}
-    input,textarea{width:100%;padding:12px;border-radius:12px;border:1px solid rgba(255,255,255,.14);background:rgba(0,0,0,.25);color:#fff}
-    textarea{min-height:90px;resize:vertical}
-    .top{display:flex;justify-content:space-between;align-items:center;margin-bottom:14px;gap:12px;flex-wrap:wrap}
-    .btn{display:inline-block;padding:12px 14px;border-radius:12px;border:1px solid rgba(255,255,255,.18);background:rgba(255,255,255,.08);color:#fff;text-decoration:none;cursor:pointer}
-    .btn.primary{background:rgba(80,120,255,.25);border-color:rgba(80,120,255,.5)}
-    .muted{opacity:.8;font-size:13px}
-    img.preview{width:100%;max-height:320px;object-fit:cover;border-radius:14px;border:1px solid rgba(255,255,255,.12)}
+    :root{
+      --bg1:#070A12;
+      --bg2:#0B1220;
+      --card: rgba(255,255,255,.08);
+      --line: rgba(255,255,255,.14);
+      --text: rgba(255,255,255,.92);
+      --muted: rgba(255,255,255,.70);
+      --shadow: 0 22px 70px rgba(0,0,0,.55);
+      --r: 20px;
+
+      --ok: #22c55e;
+      --warn: #f59e0b;
+      --bad: #ef4444;
+      --primary:#2DB2FF;
+      --primary2:#A855F7;
+    }
+
+    *{box-sizing:border-box}
+    body{
+      margin:0;
+      color:var(--text);
+      font-family: system-ui,-apple-system,Segoe UI,Roboto,Arial;
+      background:
+        radial-gradient(1200px 700px at 15% 12%, rgba(45,178,255,.20), transparent 55%),
+        radial-gradient(1000px 650px at 85% 20%, rgba(168,85,247,.16), transparent 55%),
+        linear-gradient(180deg, var(--bg1), var(--bg2));
+    }
+
+    .wrap{max-width:1040px;margin:0 auto;padding:22px 16px 34px}
+    .row{display:flex;gap:14px;flex-wrap:wrap;align-items:center;justify-content:space-between;margin-bottom:14px}
+    h1{font-size:18px;margin:0}
+    .sub{color:var(--muted);font-size:13px;line-height:1.35}
     code{background:rgba(255,255,255,.08);padding:2px 6px;border-radius:8px}
-    @media(max-width:860px){.grid{grid-template-columns:1fr}}
+
+    .panel{
+      border:1px solid var(--line);
+      background: linear-gradient(180deg, rgba(255,255,255,.10), rgba(255,255,255,.06));
+      border-radius: var(--r);
+      box-shadow: var(--shadow);
+      backdrop-filter: blur(14px);
+      padding: 16px;
+    }
+
+    .grid{display:grid;grid-template-columns: 1.1fr .9fr;gap:14px}
+    @media(max-width:920px){.grid{grid-template-columns:1fr}}
+
+    label{display:block;font-size:12px;color:rgba(255,255,255,.78);margin:10px 0 6px}
+    input,textarea{
+      width:100%;
+      padding:12px 12px;
+      border-radius:14px;
+      border:1px solid rgba(255,255,255,.14);
+      background: rgba(0,0,0,.22);
+      color:#fff;
+      outline:none;
+    }
+    textarea{min-height:92px;resize:vertical}
+
+    .btnbar{display:flex;gap:10px;flex-wrap:wrap;justify-content:flex-end}
+    .btn{
+      display:inline-flex;align-items:center;justify-content:center;gap:10px;
+      padding:10px 12px;border-radius:14px;
+      border:1px solid rgba(255,255,255,.16);
+      background: rgba(255,255,255,.06);
+      color:var(--text);
+      text-decoration:none;
+      cursor:pointer;
+      font-weight:900;
+      font-size:13px;
+      user-select:none;
+    }
+    .btn:hover{filter:brightness(1.06)}
+    .btn.primary{
+      background: linear-gradient(90deg, rgba(45,178,255,.95), rgba(168,85,247,.55));
+      border-color: transparent;
+      color:#061018;
+    }
+    .btn.green{
+      background: rgba(34,197,94,.16);
+      border-color: rgba(34,197,94,.34);
+    }
+    .btn.red{
+      background: rgba(239,68,68,.14);
+      border-color: rgba(239,68,68,.28);
+    }
+    .btn.full{width:100%}
+
+    .pill{
+      display:inline-flex;align-items:center;gap:8px;
+      padding:8px 10px;border-radius:999px;
+      border:1px solid rgba(255,255,255,.14);
+      background: rgba(255,255,255,.06);
+      font-size:12px;font-weight:900;
+      color:rgba(255,255,255,.86);
+    }
+    .pill.ok{border-color: rgba(34,197,94,.45); background: rgba(34,197,94,.14)}
+    .pill.warn{border-color: rgba(245,158,11,.45); background: rgba(245,158,11,.12)}
+    .pill.bad{border-color: rgba(239,68,68,.45); background: rgba(239,68,68,.12)}
+
+    .kpis{display:flex;gap:10px;flex-wrap:wrap;margin-top:10px}
+    .mini{
+      padding:10px 12px;border-radius:16px;
+      border:1px solid rgba(255,255,255,.14);
+      background: rgba(0,0,0,.18);
+      color:rgba(255,255,255,.86);
+      font-size:12.5px;font-weight:900;
+      cursor:pointer;
+    }
+
+    /* Preview (cohérent avec paypage) */
+    .previewWrap{
+      border:1px solid rgba(255,255,255,.14);
+      border-radius: 18px;
+      background: rgba(0,0,0,.14);
+      padding: 14px;
+    }
+    .mock{
+      border-radius: 18px;
+      border:1px solid rgba(255,255,255,.14);
+      background: linear-gradient(180deg, rgba(255,255,255,.10), rgba(255,255,255,.06));
+      padding: 16px;
+      text-align:center;
+    }
+    .logoWrap{
+      display:flex;justify-content:center;
+      margin: 6px 0 10px;
+    }
+    .logoBadge{
+      display:flex;align-items:center;justify-content:center;
+      width:96px;height:96px;
+    }
+    .logoBadge img{
+      width:96px;height:96px;object-fit:contain;
+      filter: drop-shadow(0 10px 28px rgba(0,0,0,.45));
+    }
+
+    .logoBadge.round{
+      border-radius:999px; overflow:hidden;
+      background: rgba(255,255,255,.06);
+      border:1px solid rgba(255,255,255,.12);
+      box-shadow: inset 0 1px 0 rgba(255,255,255,.10);
+    }
+    .logoBadge.round img{object-fit:cover; filter:none;}
+
+    .logoBadge.badge{
+      width:auto;height:auto;
+      padding:10px;border-radius:18px;
+      background: rgba(0,0,0,.18);
+      border:1px solid rgba(255,255,255,.12);
+      box-shadow: inset 0 1px 0 rgba(255,255,255,.10);
+    }
+    .logoBadge.badge img{
+      width:82px;height:82px;
+      object-fit:contain;
+      filter: drop-shadow(0 8px 22px rgba(0,0,0,.35));
+    }
+
+    .biz{margin:0;font-size:22px;font-weight:950;letter-spacing:.01em}
+    .tagline{margin:6px 0 0;color:var(--muted);font-size:13px;line-height:1.35}
+
+    .hint{margin-top:10px;color:var(--muted);font-size:12.5px;line-height:1.35}
+    .alert{
+      margin-top:10px;
+      padding:10px 12px;
+      border-radius: 14px;
+      border:1px solid rgba(245,158,11,.35);
+      background: rgba(245,158,11,.10);
+      color: rgba(255,255,255,.86);
+      font-size:12.5px;
+      display:none;
+    }
+    .alert.show{display:block}
   </style>
 </head>
+
 <body>
+  {% set slug = merchant.slug or '' %}
+  {% set public_url = '/p/' ~ slug %}
+  {% set qr_url = '/qr/' ~ slug ~ '.png' %}
+
+  {% set payment_link = merchant.payment_link or '' %}
+  {% set wa_raw = merchant.whatsapp or '' %}
+  {% set wa = (wa_raw|string)|replace('+','')|replace(' ','') %}
+  {% set photo = merchant.photo_url or '' %}
+  {% set headline = merchant.headline or '' %}
+  {% set maps_url = merchant.maps_url or '' %}
+  {% set wa_message = merchant.whatsapp_message or 'Hola! Quiero pagar.' %}
+
+  {# Heuristique photo vs logo #}
+  {% set _l = (photo|lower) %}
+  {% set is_photo = _l.endswith('.jpg') or _l.endswith('.jpeg') or _l.endswith('.webp') %}
+
+  {# Statut produit : simple et efficace #}
+  {% set has_payment = payment_link != '' %}
+  {% set has_wa = wa != '' %}
+  {% set ready = has_payment and has_wa %}
+  {% set partial = (has_payment and not has_wa) or (has_wa and not has_payment) %}
+
   <div class="wrap">
-    <div class="top">
+    <!-- Header -->
+    <div class="row">
       <div>
-        <h2 style="margin:0 0 6px">Admin Connect</h2>
-        <div class="muted">Merchant #{{ merchant.id }} — <b>{{ merchant.business_name }}</b> — slug: <code>{{ merchant.slug }}</code></div>
+        <h1>Admin PayLink</h1>
+        <div class="sub">
+          Merchant #{{ merchant.id }} — <b>{{ merchant.business_name }}</b> — slug : <code>{{ slug }}</code>
+        </div>
+
+        <div class="kpis">
+          {% if ready %}
+            <span class="pill ok">🟢 Prêt à encaisser</span>
+          {% elif partial %}
+            <span class="pill warn">🟡 Partiel</span>
+          {% else %}
+            <span class="pill bad">🔴 Incomplet</span>
+          {% endif %}
+
+          <span class="pill {% if has_payment %}ok{% else %}bad{% endif %}">
+            {% if has_payment %}✅ Paiement Stripe{% else %}❌ Paiement manquant{% endif %}
+          </span>
+
+          <span class="pill {% if has_wa %}ok{% else %}warn{% endif %}">
+            {% if has_wa %}✅ WhatsApp{% else %}⚠️ WhatsApp recommandé{% endif %}
+          </span>
+        </div>
       </div>
-      <div style="display:flex;gap:10px;flex-wrap:wrap;justify-content:flex-end">
-        <a class="btn" href="/p/{{ merchant.slug }}" target="_blank">Ouvrir page publique</a>
-        <a class="btn" href="/qr/{{ merchant.slug }}.png" target="_blank">Voir QR</a>
+
+      <div class="btnbar">
+        <a class="btn" href="{{ public_url }}" target="_blank">🌍 Ouvrir public</a>
+        <a class="btn" href="{{ qr_url }}" target="_blank">📱 Voir QR</a>
+        <button class="btn" type="button" id="copyPublicBtn">🔗 Copier lien</button>
+        <button class="btn green" type="button" id="copyWaBtn">💬 Copier message WhatsApp</button>
       </div>
     </div>
 
-    <div class="card">
-      <form method="post" action="/connect/{{ merchant.id }}/save?key={{ request.query_params.get('key','') }}">
-        <div class="grid">
-          <div>
+    <div class="panel">
+      <div class="grid">
+        <!-- Form -->
+        <div>
+          <form method="post" action="/connect/{{ merchant.id }}/save?key={{ request.query_params.get('key','') }}">
             <label>Headline (petite phrase)</label>
-            <input name="headline" value="{{ merchant.headline or '' }}" placeholder="Ex: Paiement simple & rapide via WhatsApp"/>
+            <input name="headline" value="{{ headline }}" placeholder="Ex: Paiement simple & rapide via WhatsApp"/>
 
-            <label>Payment link (Stripe Payment Link)</label>
-            <input name="payment_link" value="{{ merchant.payment_link or '' }}" placeholder="https://buy.stripe.com/..."/>
+            <label>Paiement (Stripe Payment Link)</label>
+            <input id="payment_link" name="payment_link" value="{{ payment_link }}" placeholder="https://buy.stripe.com/..."/>
+            <div class="alert" id="stripeAlert">⚠️ Le lien Stripe ne ressemble pas à un Payment Link (ex: https://buy.stripe.com/...).</div>
 
-            <label>Maps URL (option)</label>
-            <input name="maps_url" value="{{ merchant.maps_url or '' }}" placeholder="Lien Google Maps / Waze"/>
-
-            <label>Photo URL</label>
-            <input id="photo_url" name="photo_url" value="{{ merchant.photo_url or '' }}" placeholder="https://...jpg"/>
+            <label>WhatsApp (numéro)</label>
+            <input id="whatsapp" name="whatsapp" value="{{ wa_raw }}" placeholder="+505 8888 8888"/>
 
             <label>Message WhatsApp (option)</label>
             <textarea name="whatsapp_message" placeholder="Ex: Hola! Quiero pagar mi servicio...">{{ merchant.whatsapp_message or '' }}</textarea>
 
-            <button class="btn primary" type="submit" style="margin-top:10px;width:100%">Enregistrer</button>
+            <label>Logo / Photo (URL)</label>
+            <input id="photo_url" name="photo_url" value="{{ photo }}" placeholder="https://...jpg / .png"/>
 
-            <div class="muted" style="margin-top:10px">
+            <label>Maps URL (option)</label>
+            <input name="maps_url" value="{{ maps_url }}" placeholder="Lien Google Maps / Waze"/>
+
+            <button class="btn primary full" type="submit" style="margin-top:12px">💾 Enregistrer</button>
+
+            <div class="hint" style="margin-top:10px">
               Accès admin : <code>/connect/{{ merchant.id }}?key=TON_ADMIN_KEY</code>
             </div>
-          </div>
 
-          <div>
-            <div class="muted" style="margin-bottom:8px">Aperçu photo</div>
-            <img id="photoPreview" class="preview" src="{{ merchant.photo_url or 'https://via.placeholder.com/1200x700?text=Photo' }}" alt="preview"/>
+            <div class="hint" style="margin-top:8px">
+              ✅ Conseil : pour un rendu “bankable”, privilégie un logo PNG transparent ou une photo JPG/WebP.
+            </div>
+          </form>
+        </div>
 
-            <div style="margin-top:14px" class="card">
-              <div class="muted" style="margin-bottom:8px">Actions rapides</div>
+        <!-- Preview + quick tests -->
+        <div>
+          <div class="previewWrap">
+            <div class="sub" style="margin-bottom:8px">Aperçu rapide (comme la page publique)</div>
 
-              <a class="btn" style="width:100%;text-align:center;margin-bottom:10px"
-                 target="_blank"
-                 href="https://wa.me/{{ (merchant.whatsapp or '')|replace('+','')|replace(' ','') }}?text={{ (merchant.whatsapp_message or 'Hola! Quiero pagar.')|urlencode }}">
-                Tester WhatsApp
-              </a>
+            <div class="mock">
+              <div class="logoWrap">
+                <div class="logoBadge {{ 'round' if is_photo else 'badge' }}" id="logoBadge">
+                  {% if photo %}
+                    <img id="photoPreview" src="{{ photo }}" alt="logo/preview"/>
+                  {% else %}
+                    <img id="photoPreview" src="/static/images/maavnica.png" alt="logo/preview"/>
+                  {% endif %}
+                </div>
+              </div>
 
-              {% if merchant.payment_link %}
-              <a class="btn primary" style="width:100%;text-align:center"
-                 target="_blank"
-                 href="{{ merchant.payment_link }}">
-                Tester paiement (Stripe)
-              </a>
-              {% else %}
-              <div class="muted">Ajoute un <b>payment_link</b> pour activer le bouton Stripe.</div>
-              {% endif %}
+              <h2 class="biz" id="bizName">{{ merchant.business_name }}</h2>
+              <div class="tagline" id="headlinePreview">
+                {% if headline %}{{ headline }}{% else %}Paiement simple et sécurisé en quelques secondes.{% endif %}
+              </div>
+
+              <div class="kpis" style="justify-content:center;margin-top:12px">
+                <span class="pill ok">🔒 Sécurisé</span>
+                <span class="pill ok">⚡ Instantané</span>
+                <span class="pill ok">🧾 Reçu</span>
+                {% if payment_link %}
+                  <span class="pill ok">✅ Vérifié</span>
+                {% endif %}
+              </div>
+
+              <div style="margin-top:14px;display:grid;gap:10px">
+                {% if payment_link %}
+                  <a class="btn primary" href="{{ payment_link }}" target="_blank">💳 Tester paiement Stripe</a>
+                {% else %}
+                  <div class="hint">Ajoute un <b>payment_link</b> pour activer le test Stripe.</div>
+                {% endif %}
+
+                {% if wa %}
+                  <a class="btn green" id="waTestBtn"
+                     target="_blank"
+                     href="https://wa.me/{{ wa }}?text={{ wa_message|urlencode }}">
+                    💬 Tester WhatsApp
+                  </a>
+                {% else %}
+                  <div class="hint">Ajoute un numéro WhatsApp pour activer le test.</div>
+                {% endif %}
+              </div>
+
+              <div class="hint" style="margin-top:12px">
+                Powered by <b>Maavnica</b> · <span style="opacity:.75">{{ public_url }}</span>
+              </div>
+
+              <div style="margin-top:12px;display:flex;gap:10px;justify-content:center;flex-wrap:wrap">
+                <a class="mini" href="{{ public_url }}" target="_blank">🌍 Ouvrir public</a>
+                <a class="mini" href="{{ qr_url }}" target="_blank">📱 QR</a>
+              </div>
             </div>
 
+            <div class="hint" style="margin-top:10px">
+              Checklist rapide :
+              {% if has_payment %}✅ paiement{% else %}❌ paiement{% endif %} ·
+              {% if has_wa %}✅ WhatsApp{% else %}⚠️ WhatsApp{% endif %} ·
+              {% if photo %}✅ visuel{% else %}⚠️ visuel{% endif %}
+            </div>
           </div>
         </div>
-      </form>
+      </div>
     </div>
   </div>
 
   <script>
-    const input = document.getElementById("photo_url");
-    const img = document.getElementById("photoPreview");
-    input?.addEventListener("input", () => {
-      const v = (input.value || "").trim();
-      if (v) img.src = v;
+    // Helpers
+    const $ = (id) => document.getElementById(id);
+
+    // Copy public link
+    const publicUrl = window.location.origin + "{{ public_url }}";
+    $("copyPublicBtn")?.addEventListener("click", async () => {
+      try{
+        await navigator.clipboard.writeText(publicUrl);
+        $("copyPublicBtn").textContent = "✅ Lien copié";
+        setTimeout(()=> $("copyPublicBtn").textContent = "🔗 Copier lien", 900);
+      }catch(e){}
     });
+
+    // Copy WhatsApp prefilled message (user can paste into WA)
+    const waNumber = "{{ wa }}";
+    const waText = "{{ wa_message|urlencode }}";
+    const waShare = waNumber ? `https://wa.me/${waNumber}?text=${waText}` : "";
+    $("copyWaBtn")?.addEventListener("click", async () => {
+      try{
+        if(!waShare){
+          $("copyWaBtn").textContent = "⚠️ WhatsApp manquant";
+          setTimeout(()=> $("copyWaBtn").textContent = "💬 Copier message WhatsApp", 1100);
+          return;
+        }
+        await navigator.clipboard.writeText(waShare);
+        $("copyWaBtn").textContent = "✅ Message copié";
+        setTimeout(()=> $("copyWaBtn").textContent = "💬 Copier message WhatsApp", 900);
+      }catch(e){}
+    });
+
+    // Live preview: headline + photo
+    const photoInput = $("photo_url");
+    const photoImg = $("photoPreview");
+    const headlineInput = document.querySelector('input[name="headline"]');
+    const headlinePreview = $("headlinePreview");
+    const badge = $("logoBadge");
+
+    function isPhotoUrl(u){
+      const s = (u || "").trim().toLowerCase();
+      return s.endsWith(".jpg") || s.endsWith(".jpeg") || s.endsWith(".webp");
+    }
+    function applyLogoMode(url){
+      if(!badge) return;
+      badge.classList.remove("round","badge");
+      badge.classList.add(isPhotoUrl(url) ? "round" : "badge");
+    }
+
+    photoInput?.addEventListener("input", () => {
+      const v = (photoInput.value || "").trim();
+      if(v){
+        photoImg.src = v;
+        applyLogoMode(v);
+      }
+    });
+    headlineInput?.addEventListener("input", () => {
+      const v = (headlineInput.value || "").trim();
+      if(headlinePreview) headlinePreview.textContent = v || "Paiement simple et sécurisé en quelques secondes.";
+    });
+
+    // Soft validation Stripe link
+    const stripeInput = $("payment_link");
+    const stripeAlert = $("stripeAlert");
+    function validateStripe(){
+      if(!stripeInput || !stripeAlert) return;
+      const v = (stripeInput.value || "").trim();
+      if(!v){ stripeAlert.classList.remove("show"); return; }
+      const looksOk = v.startsWith("https://buy.stripe.com/") || v.startsWith("https://payment.link/") || v.includes("stripe.com");
+      stripeAlert.classList.toggle("show", !looksOk);
+    }
+    stripeInput?.addEventListener("input", validateStripe);
+    validateStripe();
+
+    // Init logo mode from initial value
+    applyLogoMode((photoInput?.value || "").trim());
   </script>
 </body>
 </html>
