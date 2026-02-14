@@ -66,7 +66,7 @@ class Merchant(Base):
 
     whatsapp_message = Column(String, nullable=True)
 
-    # 🔥 NOUVEAU
+    # draft / active
     status = Column(String, default="draft", nullable=False)
 
     created_at = Column(DateTime, default=datetime.utcnow)
@@ -163,7 +163,7 @@ def start_create(
             whatsapp=whatsapp.strip(),
             currency=currency.strip().upper(),
             amounts=parse_amounts(amounts),
-            status="draft",  # 🔥 TOUJOURS draft à la création
+            status="draft",
         )
 
         session.add(merchant)
@@ -230,6 +230,10 @@ def connect_page(request: Request, merchant_id: int):
 def connect_save(
     request: Request,
     merchant_id: int,
+
+    # ✅ PATCH: connect.html envoie whatsapp -> on l'accepte ici
+    whatsapp: Optional[str] = Form(None),
+
     payment_link: Optional[str] = Form(None),
     photo_url: Optional[str] = Form(None),
     maps_url: Optional[str] = Form(None),
@@ -242,6 +246,10 @@ def connect_save(
         merchant = session.get(Merchant, merchant_id)
         if not merchant:
             raise HTTPException(404, "Merchant introuvable")
+
+        # ✅ PATCH: on sauvegarde whatsapp sans écraser si vide
+        if whatsapp is not None and whatsapp.strip():
+            merchant.whatsapp = whatsapp.strip()
 
         merchant.payment_link = payment_link or None
         merchant.photo_url = photo_url or None
@@ -259,7 +267,6 @@ def connect_save(
         session.close()
 
 
-# 🔥 Activation manuelle (admin)
 @app.get("/activate/{merchant_id}")
 def activate_merchant(request: Request, merchant_id: int):
     require_admin(request)
@@ -291,4 +298,5 @@ def qr_png(request: Request, slug: str):
     img.save(buf, format="PNG")
 
     return Response(content=buf.getvalue(), media_type="image/png")
+
 
