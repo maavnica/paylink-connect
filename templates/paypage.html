@@ -15,9 +15,11 @@
       --shadow: 0 22px 70px rgba(0,0,0,.55);
       --r: 22px;
 
-      --primary:#2DB2FF;   /* paiement */
-      --primary2:#A855F7;  /* accent */
-      --wa:#22c55e;        /* WhatsApp */
+      --primary:#2DB2FF;
+      --primary2:#A855F7;
+      --wa:#22c55e;
+      --warn:#f59e0b;
+      --bad:#ef4444;
     }
 
     *{box-sizing:border-box}
@@ -33,15 +35,12 @@
         linear-gradient(180deg, var(--bg1), var(--bg2));
       padding: 26px 16px 34px;
     }
-
-    /* Desktop: densité premium */
     .wrap{width:min(720px,100%); margin:0 auto;}
 
     .top{
       display:flex; align-items:center; justify-content:space-between;
       gap:12px; margin-bottom:16px;
     }
-
     .lang{
       display:flex; align-items:center; gap:8px;
       padding:10px 12px;
@@ -98,10 +97,6 @@
       padding: 6px 4px 2px;
     }
 
-    /* Logo/Photo client :
-       - photo (jpg/jpeg/webp) => rond + cover
-       - logo => badge premium (évite l’effet carré blanc)
-    */
     .logoWrap{
       width: 96px;
       height: 96px;
@@ -116,8 +111,6 @@
       display:block;
       filter: drop-shadow(0 10px 28px rgba(0,0,0,.45));
     }
-
-    /* photo => rond premium */
     .logoWrap.round{
       border-radius: 999px;
       overflow: hidden;
@@ -125,12 +118,8 @@
       border: 1px solid rgba(255,255,255,.12);
       box-shadow: inset 0 1px 0 rgba(255,255,255,.10);
     }
-    .logoWrap.round img{
-      object-fit: cover;
-      filter: none;
-    }
+    .logoWrap.round img{ object-fit: cover; filter:none; }
 
-    /* logo => badge premium */
     .logoWrap.badge{
       padding: 10px;
       border-radius: 18px;
@@ -180,6 +169,8 @@
       align-items:center;
       font-weight:800;
     }
+    .pill.warn{ border-color: rgba(245,158,11,.45); background: rgba(245,158,11,.12); }
+    .pill.bad{ border-color: rgba(239,68,68,.45); background: rgba(239,68,68,.12); }
 
     .cta{
       position:relative;
@@ -200,22 +191,29 @@
       letter-spacing:.01em;
       user-select:none;
       transition: transform .08s ease, filter .12s ease;
+      min-height: 52px;
     }
     .btn:active{transform: translateY(1px);}
     .btn.primary{
       background: linear-gradient(90deg, rgba(45,178,255,.95), rgba(168,85,247,.55));
       border-color: transparent;
       color:#071019;
-      min-height: 52px;
       font-size: 15px;
     }
     .btn.wa{
       background: rgba(34,197,94,.14);
       border-color: rgba(34,197,94,.35);
       color: rgba(255,255,255,.92);
+      min-height: 50px;
     }
     .btn.wa:hover{filter: brightness(1.06);}
     .btn.primary:hover{filter: brightness(1.06);}
+
+    .btn.locked{
+      opacity:.62;
+      cursor:not-allowed;
+      filter:saturate(.65);
+    }
 
     .smallrow{
       position:relative;
@@ -260,7 +258,6 @@
     .footer a{color: rgba(255,255,255,.70); text-decoration:none}
     .footer a:hover{text-decoration:underline}
 
-    /* QR modal */
     .modal{
       position:fixed; inset:0;
       background: rgba(0,0,0,.55);
@@ -301,11 +298,9 @@
       cursor:pointer;
     }
 
-    /* Mobile: payment-first (plus bankable) */
     @media (max-width:520px){
       .card{padding:18px}
       .biz{font-size:24px}
-
       .btn.primary{ padding: 16px 14px; font-size: 16px; }
       .btn.wa{ padding: 13px 14px; font-size: 14px; }
     }
@@ -313,17 +308,17 @@
 </head>
 
 <body>
-  {# SQLAlchemy-safe fields #}
   {% set pay_link = merchant.payment_link or '' %}
   {% set logo = merchant.photo_url or '' %}
   {% set wa_raw = merchant.whatsapp or '' %}
-  {% set wa = (wa_raw|string)|replace('+','') %}
+  {% set wa = (wa_raw|string)|replace('+','')|replace(' ','') %}
   {% set headline = merchant.headline or '' %}
   {% set maps = merchant.maps_url or '' %}
+  {% set status = merchant.status or 'draft' %}
 
-  {# Photo vs logo heuristic for premium rendering #}
   {% set _l = (logo|lower) %}
   {% set is_photo = _l.endswith('.jpg') or _l.endswith('.jpeg') or _l.endswith('.webp') %}
+  {% set can_pay = (status == 'active') and (pay_link != '') %}
 
   <div class="wrap">
     <div class="top">
@@ -358,34 +353,32 @@
           <div class="pill" data-i18n="pill_secure">🔒 Seguro</div>
           <div class="pill" data-i18n="pill_instant">⚡ Instantáneo</div>
           <div class="pill" data-i18n="pill_receipt">🧾 Recibo</div>
-          {% if pay_link %}
+
+          {% if status != 'active' %}
+            <div class="pill warn" data-i18n="pill_draft">🟡 Borrador</div>
+          {% else %}
             <div class="pill" data-i18n="pill_verified">✅ Negocio verificado</div>
           {% endif %}
         </div>
       </div>
 
       <div class="cta">
-        {% if pay_link %}
+        {% if can_pay %}
           <a class="btn primary" href="{{ pay_link }}" target="_blank" rel="noopener">
             💳 <span data-i18n="pay_now">Pagar ahora</span>
           </a>
-          <a id="waBtn" class="btn wa"
-             href="{% if wa %}https://wa.me/{{ wa }}{% else %}#{% endif %}"
-             {% if not wa %}onclick="return false"{% endif %}
-             target="_blank" rel="noopener">
-            💬 <span data-i18n="whatsapp">Hablar por WhatsApp</span>
-          </a>
         {% else %}
-          <a id="waBtn" class="btn primary"
-             href="{% if wa %}https://wa.me/{{ wa }}{% else %}#{% endif %}"
-             {% if not wa %}onclick="return false"{% endif %}
-             target="_blank" rel="noopener">
-            💬 <span data-i18n="whatsapp">Hablar por WhatsApp</span>
-          </a>
-          <div class="btn wa" style="opacity:.65; cursor:not-allowed" aria-disabled="true">
-            💳 <span data-i18n="pay_unavailable">Pago no disponible</span>
+          <div class="btn primary locked" aria-disabled="true" title="Activá el PayLink para habilitar el pago">
+            🔒 <span data-i18n="pay_locked">Activar para cobrar</span>
           </div>
         {% endif %}
+
+        <a id="waBtn" class="btn wa"
+           href="{% if wa %}https://wa.me/{{ wa }}{% else %}#{% endif %}"
+           {% if not wa %}onclick="return false"{% endif %}
+           target="_blank" rel="noopener">
+          💬 <span data-i18n="whatsapp">Hablar por WhatsApp</span>
+        </a>
       </div>
 
       <div class="smallrow">
@@ -399,10 +392,10 @@
       </div>
 
       <div class="note" id="note">
-        {% if pay_link %}
+        {% if can_pay %}
           <span data-i18n="stripe_note">Pagos seguros con Stripe. Confirmación inmediata.</span>
         {% else %}
-          <span data-i18n="missing_link">Este PayLink todavía no está listo para cobrar.</span>
+          <span data-i18n="draft_note">Pago deshabilitado: el negocio está activando su PayLink.</span>
         {% endif %}
       </div>
 
@@ -416,7 +409,6 @@
     </div>
   </div>
 
-  <!-- QR Modal -->
   <div class="modal" id="qrModal" role="dialog" aria-modal="true">
     <div class="modalCard">
       <h4 data-i18n="qr_title">Escaneá para abrir el PayLink</h4>
@@ -438,14 +430,15 @@
         pill_instant: "⚡ Instantáneo",
         pill_receipt: "🧾 Recibo",
         pill_verified: "✅ Negocio verificado",
+        pill_draft: "🟡 Borrador",
         pay_now: "Pagar ahora",
+        pay_locked: "Activar para cobrar",
         whatsapp: "Hablar por WhatsApp",
-        pay_unavailable: "Pago no disponible",
         copy: "Copiar enlace",
         qr: "Mostrar QR",
         maps: "Ubicación",
         stripe_note: "Pagos seguros con Stripe. Confirmación inmediata.",
-        missing_link: "Este PayLink todavía no está listo para cobrar.",
+        draft_note: "Pago deshabilitado: el negocio está activando su PayLink.",
         powered: "Powered by",
         contact: "Contacto",
         qr_title: "Escaneá para abrir el PayLink",
@@ -458,14 +451,15 @@
         pill_instant: "⚡ Instantané",
         pill_receipt: "🧾 Reçu",
         pill_verified: "✅ Entreprise vérifiée",
+        pill_draft: "🟡 Brouillon",
         pay_now: "Payer maintenant",
+        pay_locked: "Activer pour encaisser",
         whatsapp: "Contacter sur WhatsApp",
-        pay_unavailable: "Paiement indisponible",
         copy: "Copier le lien",
         qr: "Afficher le QR",
         maps: "Localisation",
         stripe_note: "Paiement sécurisé via Stripe. Confirmation immédiate.",
-        missing_link: "Ce PayLink n’est pas encore prêt à encaisser.",
+        draft_note: "Paiement désactivé : l’entreprise active son PayLink.",
         powered: "Powered by",
         contact: "Contact",
         qr_title: "Scannez pour ouvrir le PayLink",
@@ -489,7 +483,6 @@
     document.getElementById("btnES").addEventListener("click", () => applyLang("es"));
     document.getElementById("btnFR").addEventListener("click", () => applyLang("fr"));
 
-    // Copy
     const copyBtn = document.getElementById("copyBtn");
     const pageUrl = window.location.href;
     copyBtn?.addEventListener("click", async () => {
@@ -503,7 +496,6 @@
       }catch(e){}
     });
 
-    // QR modal
     const qrBtn = document.getElementById("qrBtn");
     const qrModal = document.getElementById("qrModal");
     const qrClose = document.getElementById("qrClose");
@@ -517,3 +509,4 @@
   </script>
 </body>
 </html>
+

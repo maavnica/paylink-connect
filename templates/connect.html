@@ -9,7 +9,6 @@
     :root{
       --bg1:#070A12;
       --bg2:#0B1220;
-      --card: rgba(255,255,255,.08);
       --line: rgba(255,255,255,.14);
       --text: rgba(255,255,255,.92);
       --muted: rgba(255,255,255,.70);
@@ -115,7 +114,6 @@
       cursor:pointer;
     }
 
-    /* Preview (cohérent avec paypage) */
     .previewWrap{
       border:1px solid rgba(255,255,255,.14);
       border-radius: 18px;
@@ -141,7 +139,6 @@
       width:96px;height:96px;object-fit:contain;
       filter: drop-shadow(0 10px 28px rgba(0,0,0,.45));
     }
-
     .logoBadge.round{
       border-radius:999px; overflow:hidden;
       background: rgba(255,255,255,.06);
@@ -149,7 +146,6 @@
       box-shadow: inset 0 1px 0 rgba(255,255,255,.10);
     }
     .logoBadge.round img{object-fit:cover; filter:none;}
-
     .logoBadge.badge{
       width:auto;height:auto;
       padding:10px;border-radius:18px;
@@ -178,6 +174,14 @@
       display:none;
     }
     .alert.show{display:block}
+
+    .box{
+      margin-top:12px;
+      border-radius: 18px;
+      border:1px solid rgba(255,255,255,.14);
+      background: rgba(0,0,0,.18);
+      padding: 12px;
+    }
   </style>
 </head>
 
@@ -193,19 +197,17 @@
   {% set headline = merchant.headline or '' %}
   {% set maps_url = merchant.maps_url or '' %}
   {% set wa_message = merchant.whatsapp_message or 'Hola! Quiero pagar.' %}
+  {% set status = merchant.status or 'draft' %}
 
-  {# Heuristique photo vs logo #}
   {% set _l = (photo|lower) %}
   {% set is_photo = _l.endswith('.jpg') or _l.endswith('.jpeg') or _l.endswith('.webp') %}
 
-  {# Statut produit : simple et efficace #}
-  {% set has_payment = payment_link != '' %}
-  {% set has_wa = wa != '' %}
-  {% set ready = has_payment and has_wa %}
-  {% set partial = (has_payment and not has_wa) or (has_wa and not has_payment) %}
+  {% set has_payment = (payment_link != '') %}
+  {% set has_wa = (wa != '') %}
+  {% set ready_config = has_payment and has_wa %}
+  {% set is_active = (status == 'active') %}
 
   <div class="wrap">
-    <!-- Header -->
     <div class="row">
       <div>
         <h1>Admin PayLink</h1>
@@ -214,16 +216,20 @@
         </div>
 
         <div class="kpis">
-          {% if ready %}
-            <span class="pill ok">🟢 Prêt à encaisser</span>
-          {% elif partial %}
-            <span class="pill warn">🟡 Partiel</span>
+          {% if is_active %}
+            <span class="pill ok">🟢 Statut : ACTIF</span>
           {% else %}
-            <span class="pill bad">🔴 Incomplet</span>
+            <span class="pill warn">🟡 Statut : BROUILLON</span>
+          {% endif %}
+
+          {% if ready_config %}
+            <span class="pill ok">✅ Config prête</span>
+          {% else %}
+            <span class="pill warn">⚠️ Config à compléter</span>
           {% endif %}
 
           <span class="pill {% if has_payment %}ok{% else %}bad{% endif %}">
-            {% if has_payment %}✅ Paiement Stripe{% else %}❌ Paiement manquant{% endif %}
+            {% if has_payment %}✅ Payment Link{% else %}❌ Payment manquant{% endif %}
           </span>
 
           <span class="pill {% if has_wa %}ok{% else %}warn{% endif %}">
@@ -240,9 +246,33 @@
       </div>
     </div>
 
+    {% if not is_active %}
+      <div class="panel" style="margin-bottom:14px">
+        <div class="row" style="margin:0">
+          <div>
+            <div style="font-weight:950; font-size:14px">Activation (19 USD/mois)</div>
+            <div class="sub" style="margin-top:6px">
+              Ton PayLink est en <b>brouillon</b>. Le bouton “Payer” reste verrouillé sur la page publique tant qu’il n’est pas activé.
+            </div>
+          </div>
+          <div class="btnbar" style="margin:0">
+            <a class="btn primary" target="_blank" rel="noopener"
+               href="https://buy.stripe.com/aFa7sE3K02mDcTsaKh4Rq04">
+              💳 Payer l’abonnement
+            </a>
+            <a class="btn green" href="/activate/{{ merchant.id }}?key={{ request.query_params.get('key','') }}">
+              ✅ J’ai payé → Activer maintenant
+            </a>
+          </div>
+        </div>
+        <div class="hint">
+          Astuce : pour l’instant c’est <b>activation manuelle</b>. Plus tard on automatisera avec un webhook Stripe.
+        </div>
+      </div>
+    {% endif %}
+
     <div class="panel">
       <div class="grid">
-        <!-- Form -->
         <div>
           <form method="post" action="/connect/{{ merchant.id }}/save?key={{ request.query_params.get('key','') }}">
             <label>Headline (petite phrase)</label>
@@ -276,7 +306,6 @@
           </form>
         </div>
 
-        <!-- Preview + quick tests -->
         <div>
           <div class="previewWrap">
             <div class="sub" style="margin-bottom:8px">Aperçu rapide (comme la page publique)</div>
@@ -301,21 +330,25 @@
                 <span class="pill ok">🔒 Sécurisé</span>
                 <span class="pill ok">⚡ Instantané</span>
                 <span class="pill ok">🧾 Reçu</span>
-                {% if payment_link %}
-                  <span class="pill ok">✅ Vérifié</span>
+                {% if is_active %}
+                  <span class="pill ok">🟢 Actif</span>
+                {% else %}
+                  <span class="pill warn">🟡 Brouillon</span>
                 {% endif %}
               </div>
 
               <div style="margin-top:14px;display:grid;gap:10px">
-                {% if payment_link %}
-                  <a class="btn primary" href="{{ payment_link }}" target="_blank">💳 Tester paiement Stripe</a>
+                {% if is_active and payment_link %}
+                  <a class="btn primary" href="{{ payment_link }}" target="_blank" rel="noopener">💳 Tester paiement Stripe</a>
+                {% elif payment_link %}
+                  <div class="hint">🔒 Paiement verrouillé (brouillon). Active l’abonnement pour encaisser.</div>
                 {% else %}
-                  <div class="hint">Ajoute un <b>payment_link</b> pour activer le test Stripe.</div>
+                  <div class="hint">Ajoute un <b>payment_link</b> pour préparer le paiement.</div>
                 {% endif %}
 
                 {% if wa %}
                   <a class="btn green" id="waTestBtn"
-                     target="_blank"
+                     target="_blank" rel="noopener"
                      href="https://wa.me/{{ wa }}?text={{ wa_message|urlencode }}">
                     💬 Tester WhatsApp
                   </a>
@@ -329,16 +362,17 @@
               </div>
 
               <div style="margin-top:12px;display:flex;gap:10px;justify-content:center;flex-wrap:wrap">
-                <a class="mini" href="{{ public_url }}" target="_blank">🌍 Ouvrir public</a>
-                <a class="mini" href="{{ qr_url }}" target="_blank">📱 QR</a>
+                <a class="mini" href="{{ public_url }}" target="_blank" rel="noopener">🌍 Ouvrir public</a>
+                <a class="mini" href="{{ qr_url }}" target="_blank" rel="noopener">📱 QR</a>
               </div>
             </div>
 
             <div class="hint" style="margin-top:10px">
-              Checklist rapide :
-              {% if has_payment %}✅ paiement{% else %}❌ paiement{% endif %} ·
+              Checklist :
+              {% if has_payment %}✅ payment_link{% else %}❌ payment_link{% endif %} ·
               {% if has_wa %}✅ WhatsApp{% else %}⚠️ WhatsApp{% endif %} ·
-              {% if photo %}✅ visuel{% else %}⚠️ visuel{% endif %}
+              {% if photo %}✅ visuel{% else %}⚠️ visuel{% endif %} ·
+              {% if is_active %}🟢 actif{% else %}🟡 brouillon{% endif %}
             </div>
           </div>
         </div>
@@ -347,10 +381,8 @@
   </div>
 
   <script>
-    // Helpers
     const $ = (id) => document.getElementById(id);
 
-    // Copy public link
     const publicUrl = window.location.origin + "{{ public_url }}";
     $("copyPublicBtn")?.addEventListener("click", async () => {
       try{
@@ -360,7 +392,6 @@
       }catch(e){}
     });
 
-    // Copy WhatsApp prefilled message (user can paste into WA)
     const waNumber = "{{ wa }}";
     const waText = "{{ wa_message|urlencode }}";
     const waShare = waNumber ? `https://wa.me/${waNumber}?text=${waText}` : "";
@@ -377,7 +408,6 @@
       }catch(e){}
     });
 
-    // Live preview: headline + photo
     const photoInput = $("photo_url");
     const photoImg = $("photoPreview");
     const headlineInput = document.querySelector('input[name="headline"]');
@@ -406,7 +436,6 @@
       if(headlinePreview) headlinePreview.textContent = v || "Paiement simple et sécurisé en quelques secondes.";
     });
 
-    // Soft validation Stripe link
     const stripeInput = $("payment_link");
     const stripeAlert = $("stripeAlert");
     function validateStripe(){
@@ -419,8 +448,8 @@
     stripeInput?.addEventListener("input", validateStripe);
     validateStripe();
 
-    // Init logo mode from initial value
     applyLogoMode((photoInput?.value || "").trim());
   </script>
 </body>
 </html>
+
