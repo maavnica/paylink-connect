@@ -59,12 +59,27 @@ class Merchant(Base):
     currency = Column(String)
     amounts = Column(String)
 
+    # Legacy (tu peux garder, fallback possible)
     payment_link = Column(String, nullable=True)
+
     photo_url = Column(String, nullable=True)
     maps_url = Column(String, nullable=True)
     headline = Column(String, nullable=True)
 
     whatsapp_message = Column(String, nullable=True)
+
+    # NEW: 3 offres (label + amount affiché + lien Stripe fixe)
+    offer1_label = Column(String, nullable=True)
+    offer1_amount = Column(String, nullable=True)
+    offer1_link = Column(String, nullable=True)
+
+    offer2_label = Column(String, nullable=True)
+    offer2_amount = Column(String, nullable=True)
+    offer2_link = Column(String, nullable=True)
+
+    offer3_label = Column(String, nullable=True)
+    offer3_amount = Column(String, nullable=True)
+    offer3_link = Column(String, nullable=True)
 
     # draft / active
     status = Column(String, default="draft", nullable=False)
@@ -129,6 +144,21 @@ def parse_amounts(amounts: str) -> str:
 
 def get_base_url(request: Request) -> str:
     return BASE_URL_ENV.rstrip("/") if BASE_URL_ENV else str(request.base_url).rstrip("/")
+
+
+def clean_amount(v: Optional[str]) -> Optional[str]:
+    """Garde uniquement des digits (affichage), ex: '25 USD' -> '25'."""
+    if v is None:
+        return None
+    s = re.sub(r"[^\d]", "", v.strip())
+    return s or None
+
+
+def clean_text(v: Optional[str]) -> Optional[str]:
+    if v is None:
+        return None
+    s = v.strip()
+    return s or None
 
 
 # =========================================================
@@ -231,14 +261,29 @@ def connect_save(
     request: Request,
     merchant_id: int,
 
-    # ✅ PATCH: connect.html envoie whatsapp -> on l'accepte ici
+    # patch existant
     whatsapp: Optional[str] = Form(None),
 
+    # legacy
     payment_link: Optional[str] = Form(None),
+
     photo_url: Optional[str] = Form(None),
     maps_url: Optional[str] = Form(None),
     headline: Optional[str] = Form(None),
     whatsapp_message: Optional[str] = Form(None),
+
+    # NEW: 3 offres
+    offer1_label: Optional[str] = Form(None),
+    offer1_amount: Optional[str] = Form(None),
+    offer1_link: Optional[str] = Form(None),
+
+    offer2_label: Optional[str] = Form(None),
+    offer2_amount: Optional[str] = Form(None),
+    offer2_link: Optional[str] = Form(None),
+
+    offer3_label: Optional[str] = Form(None),
+    offer3_amount: Optional[str] = Form(None),
+    offer3_link: Optional[str] = Form(None),
 ):
     require_admin(request)
     session = get_db()
@@ -247,15 +292,31 @@ def connect_save(
         if not merchant:
             raise HTTPException(404, "Merchant introuvable")
 
-        # ✅ PATCH: on sauvegarde whatsapp sans écraser si vide
+        # WhatsApp (ne pas écraser si vide)
         if whatsapp is not None and whatsapp.strip():
             merchant.whatsapp = whatsapp.strip()
 
-        merchant.payment_link = payment_link or None
-        merchant.photo_url = photo_url or None
-        merchant.maps_url = maps_url or None
-        merchant.headline = headline or None
-        merchant.whatsapp_message = whatsapp_message or None
+        # Champs généraux
+        merchant.photo_url = clean_text(photo_url)
+        merchant.maps_url = clean_text(maps_url)
+        merchant.headline = clean_text(headline)
+        merchant.whatsapp_message = clean_text(whatsapp_message)
+
+        # Legacy payment_link (fallback)
+        merchant.payment_link = clean_text(payment_link)
+
+        # Offres (label + amount + link)
+        merchant.offer1_label = clean_text(offer1_label)
+        merchant.offer1_amount = clean_amount(offer1_amount)
+        merchant.offer1_link = clean_text(offer1_link)
+
+        merchant.offer2_label = clean_text(offer2_label)
+        merchant.offer2_amount = clean_amount(offer2_amount)
+        merchant.offer2_link = clean_text(offer2_link)
+
+        merchant.offer3_label = clean_text(offer3_label)
+        merchant.offer3_amount = clean_amount(offer3_amount)
+        merchant.offer3_link = clean_text(offer3_link)
 
         session.commit()
 
