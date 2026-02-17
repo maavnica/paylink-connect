@@ -182,6 +182,13 @@
       background: rgba(0,0,0,.18);
       padding: 12px;
     }
+  
+    .section-title{font-weight:900;margin:14px 0 6px;font-size:14px;opacity:.95}
+    .grid2{display:grid;grid-template-columns:1fr 1fr;gap:14px}
+    .box{border:1px solid rgba(255,255,255,.12);background:rgba(0,0,0,.18);border-radius:16px;padding:12px}
+    .boxTitle{font-weight:900;font-size:13px;opacity:.95;margin-bottom:6px}
+    @media(max-width:860px){.grid2{grid-template-columns:1fr}}
+
   </style>
 </head>
 
@@ -191,6 +198,16 @@
   {% set qr_url = '/qr/' ~ slug ~ '.png' %}
 
   {% set payment_link = merchant.payment_link or '' %}
+{% set o1_label = merchant.offer1_label or '' %}
+{% set o1_amount = merchant.offer1_amount or '' %}
+{% set o1_link = merchant.offer1_link or '' %}
+{% set o2_label = merchant.offer2_label or '' %}
+{% set o2_amount = merchant.offer2_amount or '' %}
+{% set o2_link = merchant.offer2_link or '' %}
+{% set o3_label = merchant.offer3_label or '' %}
+{% set o3_amount = merchant.offer3_amount or '' %}
+{% set o3_link = merchant.offer3_link or '' %}
+{% set currency = merchant.currency or 'USD' %}
   {% set wa_raw = merchant.whatsapp or '' %}
   {% set wa = (wa_raw|string)|replace('+','')|replace(' ','') %}
   {% set photo = merchant.photo_url or '' %}
@@ -278,9 +295,51 @@
             <label>Headline (petite phrase)</label>
             <input name="headline" value="{{ headline }}" placeholder="Ex: Paiement simple & rapide via WhatsApp"/>
 
-            <label>Paiement (Stripe Payment Link)</label>
-            <input id="payment_link" name="payment_link" value="{{ payment_link }}" placeholder="https://buy.stripe.com/..."/>
-            <div class="alert" id="stripeAlert">⚠️ Le lien Stripe ne ressemble pas à un Payment Link (ex: https://buy.stripe.com/...).</div>
+
+            <div class="section-title" style="margin-top:16px">Offres / Tarifs (1 à 3 liens Stripe)</div>
+            <div class="hint">
+              Le client crée <b>1 à 3 Payment Links Stripe</b> (montants fixes). Chaque offre affichera un bouton <b>“Payer + montant”</b> sur la page publique.
+            </div>
+
+            <div class="grid2" style="margin-top:10px">
+              <div class="box">
+                <div class="boxTitle">Offre 1</div>
+                <label>Libellé</label>
+                <input name="offer1_label" value="{{ o1_label }}" placeholder="Ex: Servicio / Urgencia / Premium"/>
+                <label>Montant (affiché)</label>
+                <input name="offer1_amount" value="{{ o1_amount }}" placeholder="Ex: 25"/>
+                <label>Lien Stripe (Payment Link)</label>
+                <input name="offer1_link" value="{{ o1_link }}" placeholder="https://buy.stripe.com/..."/>
+              </div>
+
+              <div class="box">
+                <div class="boxTitle">Offre 2</div>
+                <label>Libellé</label>
+                <input name="offer2_label" value="{{ o2_label }}" placeholder="Ex: Servicio / Urgencia / Premium"/>
+                <label>Montant (affiché)</label>
+                <input name="offer2_amount" value="{{ o2_amount }}" placeholder="Ex: 49"/>
+                <label>Lien Stripe (Payment Link)</label>
+                <input name="offer2_link" value="{{ o2_link }}" placeholder="https://buy.stripe.com/..."/>
+              </div>
+
+              <div class="box">
+                <div class="boxTitle">Offre 3</div>
+                <label>Libellé</label>
+                <input name="offer3_label" value="{{ o3_label }}" placeholder="Ex: Servicio / Urgencia / Premium"/>
+                <label>Montant (affiché)</label>
+                <input name="offer3_amount" value="{{ o3_amount }}" placeholder="Ex: 79"/>
+                <label>Lien Stripe (Payment Link)</label>
+                <input name="offer3_link" value="{{ o3_link }}" placeholder="https://buy.stripe.com/..."/>
+              </div>
+
+              <div class="box">
+                <div class="boxTitle">Lien Stripe par défaut (fallback)</div>
+                <div class="hint">Optionnel. Utilisé seulement si aucune offre n’est renseignée.</div>
+                <label>Paiement (Stripe Payment Link)</label>
+                <input id="payment_link" name="payment_link" value="{{ payment_link }}" placeholder="https://buy.stripe.com/..."/>
+                <div class="alert" id="stripeAlert">⚠️ Le lien Stripe ne ressemble pas à un Payment Link (ex: https://buy.stripe.com/...).</div>
+              </div>
+            </div>
 
             <label>WhatsApp (numéro)</label>
             <input id="whatsapp" name="whatsapp" value="{{ wa_raw }}" placeholder="+505 8888 8888"/>
@@ -338,12 +397,17 @@
               </div>
 
               <div style="margin-top:14px;display:grid;gap:10px">
-                {% if is_active and payment_link %}
+                {% set has_offer = (o1_link!='') or (o2_link!='') or (o3_link!='') %}
+                {% if is_active and has_offer %}
+                  {% if o1_link %}<a class="btn primary" href="{{ o1_link }}" target="_blank" rel="noopener">💳 Tester Offre 1{% if o1_amount %} — {{ o1_amount }} {{ currency }}{% endif %}</a>{% endif %}
+                  {% if o2_link %}<a class="btn primary" href="{{ o2_link }}" target="_blank" rel="noopener">💳 Tester Offre 2{% if o2_amount %} — {{ o2_amount }} {{ currency }}{% endif %}</a>{% endif %}
+                  {% if o3_link %}<a class="btn primary" href="{{ o3_link }}" target="_blank" rel="noopener">💳 Tester Offre 3{% if o3_amount %} — {{ o3_amount }} {{ currency }}{% endif %}</a>{% endif %}
+                {% elif is_active and payment_link %}
                   <a class="btn primary" href="{{ payment_link }}" target="_blank" rel="noopener">💳 Tester paiement Stripe</a>
-                {% elif payment_link %}
+                {% elif has_offer or payment_link %}
                   <div class="hint">🔒 Paiement verrouillé (brouillon). Active l’abonnement pour encaisser.</div>
                 {% else %}
-                  <div class="hint">Ajoute un <b>payment_link</b> pour préparer le paiement.</div>
+                  <div class="hint">Ajoute au moins <b>1 offre</b> (ou un <b>payment_link</b>) pour préparer le paiement.</div>
                 {% endif %}
 
                 {% if wa %}

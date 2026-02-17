@@ -315,10 +315,21 @@
   {% set headline = merchant.headline or '' %}
   {% set maps = merchant.maps_url or '' %}
   {% set status = merchant.status or 'draft' %}
+{% set currency = merchant.currency or 'USD' %}
+{% set o1_label = merchant.offer1_label or '' %}
+{% set o1_amount = merchant.offer1_amount or '' %}
+{% set o1_link = merchant.offer1_link or '' %}
+{% set o2_label = merchant.offer2_label or '' %}
+{% set o2_amount = merchant.offer2_amount or '' %}
+{% set o2_link = merchant.offer2_link or '' %}
+{% set o3_label = merchant.offer3_label or '' %}
+{% set o3_amount = merchant.offer3_amount or '' %}
+{% set o3_link = merchant.offer3_link or '' %}
 
   {% set _l = (logo|lower) %}
   {% set is_photo = _l.endswith('.jpg') or _l.endswith('.jpeg') or _l.endswith('.webp') %}
-  {% set can_pay = (status == 'active') and (pay_link != '') %}
+  {% set has_offer = (o1_link!='') or (o2_link!='') or (o3_link!='') %}
+  {% set can_pay = (status == 'active') and (has_offer or (pay_link != '')) %}
 
   <div class="wrap">
     <div class="top">
@@ -364,9 +375,27 @@
 
       <div class="cta">
         {% if can_pay %}
-          <a class="btn primary" href="{{ pay_link }}" target="_blank" rel="noopener">
-            💳 <span data-i18n="pay_now">Pagar ahora</span>
-          </a>
+          {% if has_offer %}
+            {% if o1_link %}
+              <a class="btn primary" href="{{ o1_link }}" target="_blank" rel="noopener">
+                💳 <span>{% if o1_label %}{{ o1_label }} · {% endif %}{{ o1_amount }} {{ currency }}</span>
+              </a>
+            {% endif %}
+            {% if o2_link %}
+              <a class="btn primary" href="{{ o2_link }}" target="_blank" rel="noopener">
+                💳 <span>{% if o2_label %}{{ o2_label }} · {% endif %}{{ o2_amount }} {{ currency }}</span>
+              </a>
+            {% endif %}
+            {% if o3_link %}
+              <a class="btn primary" href="{{ o3_link }}" target="_blank" rel="noopener">
+                💳 <span>{% if o3_label %}{{ o3_label }} · {% endif %}{{ o3_amount }} {{ currency }}</span>
+              </a>
+            {% endif %}
+          {% else %}
+            <a class="btn primary" href="{{ pay_link }}" target="_blank" rel="noopener">
+              💳 <span data-i18n="pay_now">Pagar ahora</span>
+            </a>
+          {% endif %}
         {% else %}
           <div class="btn primary locked" aria-disabled="true" title="Activá el PayLink para habilitar el pago">
             🔒 <span data-i18n="pay_locked">Activar para cobrar</span>
