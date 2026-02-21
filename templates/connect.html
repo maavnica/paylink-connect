@@ -52,7 +52,7 @@
     @media(max-width:920px){.grid{grid-template-columns:1fr}}
 
     label{display:block;font-size:12px;color:rgba(255,255,255,.78);margin:10px 0 6px}
-    input,textarea{
+    input,textarea,select{
       width:100%;
       padding:12px 12px;
       border-radius:14px;
@@ -353,6 +353,13 @@
             <label>Maps URL (option)</label>
             <input name="maps_url" value="{{ maps_url }}" placeholder="Lien Google Maps / Waze"/>
 
+
+
+            <label>Statut</label>
+            <select name="status">
+              <option value="draft" {% if status != 'active' %}selected{% endif %}>Brouillon (non publié)</option>
+              <option value="active" {% if status == 'active' %}selected{% endif %}>Actif (publié)</option>
+            </select>
             <button class="btn primary full" type="submit" style="margin-top:12px">💾 Enregistrer</button>
 
             <div class="hint" style="margin-top:10px">
@@ -516,4 +523,3 @@
   </script>
 </body>
 </html>
-

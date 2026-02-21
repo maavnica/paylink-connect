@@ -378,17 +378,17 @@
           {% if has_offer %}
             {% if o1_link %}
               <a class="btn primary" href="{{ o1_link }}" target="_blank" rel="noopener">
-                💳 <span>{% if o1_label %}{{ o1_label }} · {% endif %}{{ o1_amount }} {{ currency }}</span>
+                💳 <span>{% if o1_label %}{{ o1_label }}{% if o1_amount %} · {% endif %}{% endif %}{% if o1_amount %}{{ o1_amount }} {{ currency }}{% else %}<span data-i18n="pay_now">Pagar ahora</span>{% endif %}</span>
               </a>
             {% endif %}
             {% if o2_link %}
               <a class="btn primary" href="{{ o2_link }}" target="_blank" rel="noopener">
-                💳 <span>{% if o2_label %}{{ o2_label }} · {% endif %}{{ o2_amount }} {{ currency }}</span>
+                💳 <span>{% if o2_label %}{{ o2_label }}{% if o2_amount %} · {% endif %}{% endif %}{% if o2_amount %}{{ o2_amount }} {{ currency }}{% else %}<span data-i18n="pay_now">Pagar ahora</span>{% endif %}</span>
               </a>
             {% endif %}
             {% if o3_link %}
               <a class="btn primary" href="{{ o3_link }}" target="_blank" rel="noopener">
-                💳 <span>{% if o3_label %}{{ o3_label }} · {% endif %}{{ o3_amount }} {{ currency }}</span>
+                💳 <span>{% if o3_label %}{{ o3_label }}{% if o3_amount %} · {% endif %}{% endif %}{% if o3_amount %}{{ o3_amount }} {{ currency }}{% else %}<span data-i18n="pay_now">Pagar ahora</span>{% endif %}</span>
               </a>
             {% endif %}
           {% else %}
